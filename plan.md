@@ -149,14 +149,14 @@ A platform that matches buyers and travelers in real-time using a web dashboard 
 
 ### 🤖 Telegram Bot
 
-- [ ] Bot setup with Telegram Bot API
-- [ ] Handle /start, /newrequest, /available, /accept, /status
+- [x] Bot setup with Telegram Bot API
+- [x] Handle /start, /newrequest, /available, /accept, /status
 - [ ] Message parsing + Gemini integration
 - [ ] Multi-turn conversation for form filling
 - [ ] Live location sharing
-- [ ] Notifications for matched listings
-- [ ] Bidding UI with inline buttons
-- [ ] OTP exchange & submission
+- [x] Notifications for matched listings
+- [x] Bidding UI with inline buttons (Need to transit from demo to use case)
+- [x] OTP exchange & submission (Need to improve on the OTP side for travellers)
 - [ ] Confirmation and review prompts
 
 ### 🌐 Web App
