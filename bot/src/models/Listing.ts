@@ -14,6 +14,7 @@ export enum ListingStatus {
 
 export interface IListing extends Document {
     _id: Types.ObjectId;
+    listingId: string;
     buyerId: number;
     itemDescription: string;
     itemPrice: number;
@@ -33,6 +34,7 @@ export interface IListing extends Document {
 }
 
 const ListingSchema: Schema = new Schema({
+    listingId: { type: String, unique: true },
     buyerId: { type: Number, required: true, ref: 'User' },
     itemDescription: { type: String, required: true },
     itemPrice: { type: Number, required: true },

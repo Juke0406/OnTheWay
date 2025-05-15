@@ -37,6 +37,13 @@ export interface IUser extends Document {
     pickupAddress?: string;
     destinationAddress?: string;
     notifiedListingIds?: string[];
+    nlpFlow?: boolean;
+    email?: string;
+    emailVerified: boolean;
+    image?: string;
+    password?: string;
+    accounts?: any[];
+    sessions?: any[];
     createdAt: Date;
     updatedAt: Date;
 }
@@ -90,6 +97,14 @@ const UserSchema: Schema = new Schema({
     walletBalance: { type: Number, default: 0 },
     rating: { type: Number, default: 5 },
     notifiedListingIds: { type: [String], default: [] },
+    nlpFlow: { type: Boolean, default: false },
+    email: { type: String },
+    emailVerified: { type: Boolean, default: false },
+    image: { type: String },
+    password: { type: String },
+    accounts: { type: Array, default: [] },
+    sessions: { type: Array, default: [] },
 }, { timestamps: true });
 
-export default mongoose.model<IUser>('User', UserSchema);
+// Override the default pluralized collection name
+export default mongoose.model<IUser>('User', UserSchema, 'user');
