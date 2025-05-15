@@ -150,7 +150,7 @@ A platform that matches buyers and travelers in real-time using a web dashboard 
 ### 🤖 Telegram Bot
 
 - [x] Bot setup with Telegram Bot API
-- [x] Handle /start, /newrequest, /available, /accept, /status, /listings
+- [x] Handle /start, /newrequest, /available, /accept, /status
 - [ ] Message parsing + Gemini integration
 - [x] Multi-turn conversation for form filling
 - [x] Live location sharing

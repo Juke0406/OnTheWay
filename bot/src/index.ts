@@ -77,4 +77,3 @@ serve({
 
 bot.on('polling_error', (error) => {
 });
-

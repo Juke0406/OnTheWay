@@ -1,23 +1,27 @@
 {
-  "name": "ontheway-bot",
-  "type": "module",
-  "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js"
-  },
-  "dependencies": {
-    "@hono/node-server": "^1.14.1",
-    "axios": "^1.6.0",
-    "dotenv": "^16.3.1",
-    "hono": "^4.7.9",
-    "mongoose": "^8.0.3",
-    "node-telegram-bot-api": "^0.64.0"
-  },
-  "devDependencies": {
-    "@types/node": "^20.11.17",
-    "@types/node-telegram-bot-api": "^0.64.1",
-    "tsx": "^4.7.1",
-    "typescript": "^5.8.3"
-  }
+    "name": "my-app",
+    "type": "module",
+    "scripts": {
+        "dev": "tsx watch src/index.ts",
+        "build": "tsc",
+        "start": "node dist/index.js"
+    },
+    "dependencies": {
+        "@google/generative-ai": "^0.24.1",
+        "@hono/node-server": "^1.14.1",
+        "better-sqlite3": "^11.10.0",
+        "dotenv": "^16.5.0",
+        "dotenv-expand": "^12.0.2",
+        "hono": "^4.7.9",
+        "knex": "^3.1.0",
+        "telegraf": "^4.16.3",
+        "uuid": "^11.1.0"
+    },
+    "devDependencies": {
+        "@types/node": "^20.11.17",
+        "@types/uuid": "^10.0.0",
+        "tsx": "^4.7.1",
+        "typescript": "^5.8.3"
+    },
+    "packageManager": "pnpm@9.15.0+sha512.76e2379760a4328ec4415815bcd6628dee727af3779aaa4c914e3944156c4299921a89f976381ee107d41f12cfa4b66681ca9c718f0668fa0831ed4c6d8ba56c"
 }
