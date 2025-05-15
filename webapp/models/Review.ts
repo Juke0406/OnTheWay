@@ -1,32 +1,25 @@
-import mongoose, { Schema, Document, Model } from 'mongoose';
-
-export interface IReview extends Document {
-  reviewId: string;
-  fromUserId: string;
-  toUserId: string;
-  rating: number;
-  comment?: string;
-  listingId: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import mongoose, { Model, Schema } from "mongoose";
+import { IReview } from "./types";
 
 const ReviewSchema: Schema = new Schema(
   {
+    // Web app specific fields
     reviewId: {
       type: String,
-      required: true,
       unique: true,
+      sparse: true, // Allow null/undefined values
     },
+
+    // Fields from bot model
     fromUserId: {
-      type: String,
+      type: Schema.Types.Mixed, // Support both string (web) and number (bot)
       required: true,
-      ref: 'User',
+      ref: "User",
     },
     toUserId: {
-      type: String,
+      type: Schema.Types.Mixed, // Support both string (web) and number (bot)
       required: true,
-      ref: 'User',
+      ref: "User",
     },
     rating: {
       type: Number,
@@ -38,9 +31,9 @@ const ReviewSchema: Schema = new Schema(
       type: String,
     },
     listingId: {
-      type: String,
+      type: Schema.Types.Mixed, // Support both string (web) and ObjectId (bot)
       required: true,
-      ref: 'Listing',
+      ref: "Listing",
     },
   },
   {
@@ -49,6 +42,7 @@ const ReviewSchema: Schema = new Schema(
 );
 
 // Create the model only if it doesn't exist or we're not in a server context
-const Review = mongoose.models.Review || mongoose.model<IReview>('Review', ReviewSchema);
+const Review =
+  mongoose.models.Review || mongoose.model<IReview>("Review", ReviewSchema);
 
 export default Review as Model<IReview>;

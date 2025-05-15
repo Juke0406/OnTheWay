@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { Bid, Listing, User } from "@/models";
+import { Bid, Listing, ListingStatus, User } from "@/models";
 import { NextRequest, NextResponse } from "next/server";
 
 // POST /api/listings/[listingId]/verify - Verify OTP and complete delivery
@@ -27,7 +27,7 @@ export async function POST(
     }
 
     // Check if the listing is in the matched state
-    if (listing.status !== "matched") {
+    if (listing.status !== ListingStatus.MATCHED) {
       return NextResponse.json(
         { error: "Listing is not in the matched state" },
         { status: 400 }
@@ -50,7 +50,7 @@ export async function POST(
       await Listing.updateOne(
         { listingId },
         {
-          status: "completed",
+          status: ListingStatus.COMPLETED,
           deliveryConfirmed: true,
         }
       );

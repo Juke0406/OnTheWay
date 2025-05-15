@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
-import { Bid, Listing } from '@/models';
-import { v4 as uuidv4 } from 'uuid';
+import { auth } from "@/lib/auth";
+import { Bid, BidStatus, Listing, ListingStatus } from "@/models";
+import { NextRequest, NextResponse } from "next/server";
+import { v4 as uuidv4 } from "uuid";
 
 // GET /api/bids - Get all bids for the current user
 export async function GET(req: NextRequest) {
@@ -11,10 +11,7 @@ export async function GET(req: NextRequest) {
     });
 
     if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Get bids where the user is the traveler
@@ -24,9 +21,9 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ bids });
   } catch (error) {
-    console.error('Error fetching bids:', error);
+    console.error("Error fetching bids:", error);
     return NextResponse.json(
-      { error: 'Failed to fetch bids' },
+      { error: "Failed to fetch bids" },
       { status: 500 }
     );
   }
@@ -40,41 +37,32 @@ export async function POST(req: NextRequest) {
     });
 
     if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await req.json();
-    
-    const {
-      listingId,
-      proposedFee,
-    } = body;
+
+    const { listingId, proposedFee } = body;
 
     // Validate required fields
     if (!listingId || !proposedFee) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
     // Check if the listing exists
     const listing = await Listing.findOne({ listingId });
-    
+
     if (!listing) {
-      return NextResponse.json(
-        { error: 'Listing not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Listing not found" }, { status: 404 });
     }
 
     // Check if the listing is still open
-    if (listing.status !== 'open') {
+    if (listing.status !== ListingStatus.OPEN) {
       return NextResponse.json(
-        { error: 'Listing is not open for bids' },
+        { error: "Listing is not open for bids" },
         { status: 400 }
       );
     }
@@ -82,7 +70,7 @@ export async function POST(req: NextRequest) {
     // Check if the user is not the buyer
     if (listing.buyerId === session.user.id) {
       return NextResponse.json(
-        { error: 'You cannot bid on your own listing' },
+        { error: "You cannot bid on your own listing" },
         { status: 400 }
       );
     }
@@ -93,15 +81,15 @@ export async function POST(req: NextRequest) {
       travelerId: session.user.id,
       listingId: listing.listingId,
       proposedFee,
-      status: 'pending',
+      status: BidStatus.PENDING,
       timestamp: new Date(),
     });
 
     return NextResponse.json({ bid }, { status: 201 });
   } catch (error) {
-    console.error('Error creating bid:', error);
+    console.error("Error creating bid:", error);
     return NextResponse.json(
-      { error: 'Failed to create bid' },
+      { error: "Failed to create bid" },
       { status: 500 }
     );
   }

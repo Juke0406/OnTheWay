@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
-import { Listing } from '@/models';
-import { v4 as uuidv4 } from 'uuid';
+import { auth } from "@/lib/auth";
+import { Listing, ListingStatus } from "@/models";
+import { NextRequest, NextResponse } from "next/server";
+import { v4 as uuidv4 } from "uuid";
 
 // GET /api/listings - Get all listings
 export async function GET(req: NextRequest) {
@@ -11,10 +11,7 @@ export async function GET(req: NextRequest) {
     });
 
     if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const listings = await Listing.find({
@@ -23,9 +20,9 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ listings });
   } catch (error) {
-    console.error('Error fetching listings:', error);
+    console.error("Error fetching listings:", error);
     return NextResponse.json(
-      { error: 'Failed to fetch listings' },
+      { error: "Failed to fetch listings" },
       { status: 500 }
     );
   }
@@ -39,14 +36,11 @@ export async function POST(req: NextRequest) {
     });
 
     if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await req.json();
-    
+
     const {
       itemDescription,
       itemPrice,
@@ -56,9 +50,15 @@ export async function POST(req: NextRequest) {
     } = body;
 
     // Validate required fields
-    if (!itemDescription || !itemPrice || !pickupLocation || !destinationLocation || !maxFee) {
+    if (
+      !itemDescription ||
+      !itemPrice ||
+      !pickupLocation ||
+      !destinationLocation ||
+      !maxFee
+    ) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: "Missing required fields" },
         { status: 400 }
       );
     }
@@ -72,15 +72,15 @@ export async function POST(req: NextRequest) {
       pickupLocation,
       destinationLocation,
       maxFee,
-      status: 'open',
+      status: ListingStatus.OPEN,
       deliveryConfirmed: false,
     });
 
     return NextResponse.json({ listing }, { status: 201 });
   } catch (error) {
-    console.error('Error creating listing:', error);
+    console.error("Error creating listing:", error);
     return NextResponse.json(
-      { error: 'Failed to create listing' },
+      { error: "Failed to create listing" },
       { status: 500 }
     );
   }

@@ -1,32 +1,32 @@
-import mongoose, { Schema, Document, Model } from 'mongoose';
+import mongoose, { Model, Schema } from "mongoose";
+import { IBid } from "./types";
 
-export interface IBid extends Document {
-  bidId: string;
-  travelerId: string;
-  listingId: string;
-  proposedFee: number;
-  status: 'pending' | 'accepted' | 'declined';
-  timestamp: Date;
-  createdAt: Date;
-  updatedAt: Date;
+// Define bid status enum to match the bot
+export enum BidStatus {
+  PENDING = "pending",
+  ACCEPTED = "accepted",
+  DECLINED = "declined",
 }
 
 const BidSchema: Schema = new Schema(
   {
+    // Web app specific fields
     bidId: {
       type: String,
-      required: true,
       unique: true,
+      sparse: true, // Allow null/undefined values
     },
+
+    // Fields from bot model
     travelerId: {
-      type: String,
+      type: Schema.Types.Mixed, // Support both string (web) and number (bot)
       required: true,
-      ref: 'User',
+      ref: "User",
     },
     listingId: {
-      type: String,
+      type: Schema.Types.Mixed, // Support both string (web) and ObjectId (bot)
       required: true,
-      ref: 'Listing',
+      ref: "Listing",
     },
     proposedFee: {
       type: Number,
@@ -35,9 +35,11 @@ const BidSchema: Schema = new Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'accepted', 'declined'],
-      default: 'pending',
+      enum: Object.values(BidStatus),
+      default: BidStatus.PENDING,
     },
+
+    // Web app specific fields
     timestamp: {
       type: Date,
       default: Date.now,
@@ -49,6 +51,6 @@ const BidSchema: Schema = new Schema(
 );
 
 // Create the model only if it doesn't exist or we're not in a server context
-const Bid = mongoose.models.Bid || mongoose.model<IBid>('Bid', BidSchema);
+const Bid = mongoose.models.Bid || mongoose.model<IBid>("Bid", BidSchema);
 
 export default Bid as Model<IBid>;
