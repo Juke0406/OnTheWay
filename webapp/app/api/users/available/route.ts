@@ -12,12 +12,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Find users who are available for deliveries
+    // Find users who are available for deliveries (exclude name for privacy)
     const availableUsers = await User.find({
       "availabilityData.isAvailable": true,
       "availabilityData.location": { $exists: true },
     }).select(
-      "userId username name image rating availabilityData.location availabilityData.isLiveLocation availabilityData.radius"
+      "userId telegramId rating availabilityData.location availabilityData.isLiveLocation availabilityData.radius"
     );
 
     return NextResponse.json({ users: availableUsers });

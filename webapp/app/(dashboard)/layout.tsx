@@ -10,10 +10,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { signOut, useSession } from "@/lib/auth-client";
+import { micah } from "@dicebear/collection";
+import { createAvatar } from "@dicebear/core";
 import { LogOut, MapPin } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
 export default function DashboardLayout({
   children,
@@ -22,6 +24,50 @@ export default function DashboardLayout({
 }) {
   const { data: session, isPending } = useSession();
   const router = useRouter();
+
+  // All hooks must be called before any conditional returns
+  const userData = useMemo(() => {
+    if (!session?.user) {
+      return {
+        userName: "User",
+        userInitials: "U",
+        telegramId: undefined,
+        username: undefined,
+        walletBalance: 0,
+        rating: 0,
+        avatarSvg: "",
+      };
+    }
+
+    const userName = session.user.name || "User";
+    const userInitials = userName.charAt(0).toUpperCase();
+    const telegramId = (session.user as any)?.telegramId;
+    const username = (session.user as any)?.username;
+    const walletBalance = (session.user as any)?.walletBalance || 0;
+    const rating = (session.user as any)?.rating || 0;
+
+    // Generate avatar using telegramId as seed
+    let avatarSvg = session.user.image || "";
+    if (telegramId) {
+      const avatar = createAvatar(micah, {
+        seed: telegramId.toString(),
+        size: 128,
+      });
+      avatarSvg = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
+        avatar.toString()
+      )}`;
+    }
+
+    return {
+      userName,
+      userInitials,
+      telegramId,
+      username,
+      walletBalance,
+      rating,
+      avatarSvg,
+    };
+  }, [session?.user]);
 
   useEffect(() => {
     if (!isPending && !session) {
@@ -43,18 +89,6 @@ export default function DashboardLayout({
 
   // Log session data to see structure
   console.log("Session data:", session);
-
-  // Get user info from session
-  const userImage = session?.user?.image || "";
-  const userName = session?.user?.name || "User";
-  const userInitials = userName.charAt(0).toUpperCase();
-
-  // For Telegram users, we might have additional data
-  // We'll check if it exists in the session object
-  const telegramId = (session?.user as any)?.telegramId;
-  const username = (session?.user as any)?.username;
-  const walletBalance = (session?.user as any)?.walletBalance || 0;
-  const rating = (session?.user as any)?.rating || 0;
 
   const handleSignOut = () => {
     signOut().then(() => router.push("/login"));
@@ -81,26 +115,29 @@ export default function DashboardLayout({
             <DropdownMenuTrigger className="focus:outline-none">
               <div className="flex items-center gap-2 hover:bg-accent hover:text-accent-foreground rounded-md p-2 transition-colors">
                 <Avatar>
-                  <AvatarImage src={userImage} alt={userName} />
-                  <AvatarFallback>{userInitials}</AvatarFallback>
+                  <AvatarImage
+                    src={userData.avatarSvg}
+                    alt={userData.userName}
+                  />
+                  <AvatarFallback>{userData.userInitials}</AvatarFallback>
                 </Avatar>
                 <span className="hidden sm:inline-block font-medium">
-                  {userName}
+                  {userData.userName}
                 </span>
               </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>
                 <div className="flex flex-col">
-                  <span>{userName}</span>
-                  {username && (
+                  <span>{userData.userName}</span>
+                  {userData.username && (
                     <span className="text-xs text-muted-foreground">
-                      @{username}
+                      @{userData.username}
                     </span>
                   )}
-                  {telegramId && !username && (
+                  {userData.telegramId && !userData.username && (
                     <span className="text-xs text-muted-foreground">
-                      Telegram ID: {telegramId}
+                      Telegram ID: {userData.telegramId}
                     </span>
                   )}
                 </div>
@@ -110,7 +147,7 @@ export default function DashboardLayout({
                 <div className="flex justify-between w-full">
                   <span>Wallet Balance</span>
                   <span className="font-medium flex items-center">
-                    ${walletBalance.toFixed(2)}
+                    ${userData.walletBalance.toFixed(2)}
                   </span>
                 </div>
               </DropdownMenuItem>
@@ -118,7 +155,7 @@ export default function DashboardLayout({
                 <div className="flex justify-between w-full">
                   <span>Rating</span>
                   <span className="font-medium flex items-center">
-                    {rating.toFixed(1)}{" "}
+                    {userData.rating.toFixed(1)}{" "}
                     <span className="text-yellow-500 ml-1">★</span>
                   </span>
                 </div>

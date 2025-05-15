@@ -10,12 +10,10 @@ import {
 } from "./global-map-styles";
 import "./map-styles.css";
 
-// Define the user interface
+// Define the user interface (removed name and image for privacy)
 interface AvailableUser {
   userId: string;
-  username?: string;
-  name: string;
-  image?: string;
+  telegramId?: number;
   rating: number;
   availabilityData: {
     location: {
@@ -31,7 +29,6 @@ export default function MapPage() {
   const [availableUsers, setAvailableUsers] = useState<AvailableUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [map, setMap] = useState<google.maps.Map | null>(null);
   const [googleMapsLoaded, setGoogleMapsLoaded] = useState(false);
 
   // Load Google Maps API
@@ -87,7 +84,7 @@ export default function MapPage() {
     const mapOptions: google.maps.MapOptions = {
       center: defaultCenter,
       zoom: 12,
-      mapTypeId: "hybrid", // Use hybrid for satellite + roads
+      mapTypeId: "roadmap", // Default to roadmap instead of satellite/hybrid
       tilt: webGLSupported ? 45 : 0, // Add a 45-degree tilt for 3D effect if WebGL is supported
       heading: 0, // Initial heading
       styles: [
@@ -111,7 +108,6 @@ export default function MapPage() {
     };
 
     const newMap = new google.maps.Map(mapElement, mapOptions);
-    setMap(newMap);
 
     // Apply custom styles for info windows and circles
     applyCustomInfoWindowStyles();
@@ -129,9 +125,9 @@ export default function MapPage() {
           lng: user.availabilityData.location.longitude,
         };
 
-        // Generate avatar SVG
+        // Generate avatar SVG using telegramId as seed for consistency
         const avatar = createAvatar(micah, {
-          seed: user.userId,
+          seed: user.telegramId?.toString() || user.userId, // Use telegramId if available, fallback to userId
           size: 128,
         });
 
@@ -152,6 +148,7 @@ export default function MapPage() {
           center: position,
           radius: radius * 1000, // Convert km to meters
           zIndex: 1,
+          // @ts-ignore - className is not in the type definitions but works for styling
           className: "radius-circle",
         });
 
@@ -256,12 +253,12 @@ export default function MapPage() {
           document.head.appendChild(style);
         }
 
-        // Create custom marker with avatar
-        // @ts-expect-error - Marker is deprecated but still works
+        // Create custom marker with avatar (no name for privacy)
+        // @ts-ignore - Marker is deprecated but still works
         const marker = new google.maps.Marker({
           position,
           map: newMap,
-          title: user.name,
+          title: "Deliverer", // Generic title for privacy
           icon: {
             url: svgUrl,
             scaledSize: new google.maps.Size(50, 50),
@@ -338,11 +335,10 @@ export default function MapPage() {
           }
         }, 1000);
 
-        // Add info window with user details
+        // Add info window with user details (without name for privacy)
         const infoWindow = new google.maps.InfoWindow({
           content: `
             <div class="custom-info-window">
-              <h3>${user.name}</h3>
               <p>Rating: ${user.rating}/5 ⭐</p>
               <p>Available radius: ${radius} km</p>
               ${
@@ -391,8 +387,8 @@ export default function MapPage() {
       setTimeout(() => {
         try {
           if (webGLSupported) {
-            // Set to Earth/hybrid mode
-            newMap.setMapTypeId("hybrid");
+            // Set to roadmap mode to match the default view
+            newMap.setMapTypeId("roadmap");
 
             // Force the 3D view with tilt
             // setTilt is available but not in the types
@@ -411,7 +407,7 @@ export default function MapPage() {
             const infoWindow = new google.maps.InfoWindow({
               content: `
                 <div class="custom-info-window">
-                  <h3>No Deliverers Available</h3>
+                  <p><strong>No Deliverers Available</strong></p>
                   <p>There are currently no available deliverers in your area.</p>
                   <p>Please check back later or try a different location.</p>
                 </div>
