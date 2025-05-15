@@ -44,7 +44,7 @@
 }
 
 :root {
-  --radius: 0.625rem;
+  --radius: 1rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.141 0.005 285.823);
   --card: oklch(1 0 0);
@@ -135,4 +135,61 @@
   border: none;
   margin: 0 auto;
   display: block;
+}
+
+/* Radar pulse animation for matchmaking */
+@keyframes matchmaking-pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.1);
+    opacity: 0.9;
+    box-shadow: 0 0 10px rgba(70, 229, 118, 0.3);
+  }
+  50% {
+    opacity: 0.7;
+    box-shadow: 0 0 20px rgba(70, 229, 118, 0.2);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(4);
+    opacity: 0;
+    box-shadow: 0 0 0px rgba(79, 70, 229, 0);
+  }
+}
+
+.matchmaking-pulse-container {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  overflow: visible;
+  border-radius: 50%;
+}
+
+.matchmaking-pulse-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: rgba(70, 229, 118, 0.3);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+/* Map radar pulse animation - keep original scale */
+@keyframes radar-pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.1);
+    opacity: 0.9;
+    box-shadow: 0 0 10px rgba(79, 70, 229, 0.8);
+  }
+  50% {
+    opacity: 0.5;
+    box-shadow: 0 0 20px rgba(79, 70, 229, 0.5);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(30);
+    opacity: 0;
+    box-shadow: 0 0 0px rgba(79, 70, 229, 0);
+  }
 }

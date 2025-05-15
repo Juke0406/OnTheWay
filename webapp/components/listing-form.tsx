@@ -1,8 +1,5 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -15,7 +12,10 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 import { DialogFooter } from "./ui/dialog";
 
 const listingFormSchema = z.object({
@@ -53,7 +53,13 @@ const listingFormSchema = z.object({
 
 type ListingFormValues = z.infer<typeof listingFormSchema>;
 
-export function ListingForm({ onClose }: { onClose: () => void }) {
+export function ListingForm({
+  onClose,
+  onSubmitSuccess,
+}: {
+  onClose: () => void;
+  onSubmitSuccess?: () => void;
+}) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Default values for the form
@@ -72,7 +78,7 @@ export function ListingForm({ onClose }: { onClose: () => void }) {
 
   async function onSubmit(data: ListingFormValues) {
     setIsSubmitting(true);
-    
+
     try {
       // Convert string values to numbers for price and fee
       const formattedData = {
@@ -80,13 +86,18 @@ export function ListingForm({ onClose }: { onClose: () => void }) {
         itemPrice: parseFloat(data.itemPrice),
         maxFee: parseFloat(data.maxFee),
       };
-      
+
       // TODO: Implement API call to create listing
       console.log("Form data:", formattedData);
-      
+
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      
+
+      // Call the success callback if provided
+      if (onSubmitSuccess) {
+        onSubmitSuccess();
+      }
+
       // Close the dialog
       onClose();
     } catch (error) {
@@ -118,7 +129,7 @@ export function ListingForm({ onClose }: { onClose: () => void }) {
             </FormItem>
           )}
         />
-        
+
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -135,14 +146,12 @@ export function ListingForm({ onClose }: { onClose: () => void }) {
                     {...field}
                   />
                 </FormControl>
-                <FormDescription>
-                  The cost of the item itself.
-                </FormDescription>
+                <FormDescription>The cost of the item itself.</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
-          
+
           <FormField
             control={form.control}
             name="maxFee"
@@ -166,7 +175,7 @@ export function ListingForm({ onClose }: { onClose: () => void }) {
             )}
           />
         </div>
-        
+
         <FormField
           control={form.control}
           name="pickupAddress"
@@ -174,13 +183,16 @@ export function ListingForm({ onClose }: { onClose: () => void }) {
             <FormItem>
               <FormLabel>Pickup Address</FormLabel>
               <FormControl>
-                <Input placeholder="Where the item should be picked up" {...field} />
+                <Input
+                  placeholder="Where the item should be picked up"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="deliveryAddress"
@@ -188,13 +200,16 @@ export function ListingForm({ onClose }: { onClose: () => void }) {
             <FormItem>
               <FormLabel>Delivery Address</FormLabel>
               <FormControl>
-                <Input placeholder="Where the item should be delivered" {...field} />
+                <Input
+                  placeholder="Where the item should be delivered"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        
+
         <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose}>
             Cancel
