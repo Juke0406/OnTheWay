@@ -305,8 +305,6 @@ export default function MapPage() {
               // Style the marker
               markerElement.style.transition =
                 "all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)";
-              markerElement.style.boxShadow =
-                "0 0 10px rgba(255, 255, 255, 0.5)";
               markerElement.style.backgroundColor = "#fff";
               markerElement.style.padding = "3px";
               markerElement.style.border = "3px solid white";
