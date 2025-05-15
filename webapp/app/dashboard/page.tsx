@@ -1,11 +1,18 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useSession, signOut } from '@/lib/auth-client';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { signOut, useSession } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -14,7 +21,7 @@ export default function DashboardPage() {
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!isPending && !session) {
-      router.push('/login');
+      router.push("/login");
     }
   }, [session, isPending, router]);
 
@@ -34,10 +41,10 @@ export default function DashboardPage() {
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Dashboard</h1>
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           onClick={() => {
-            signOut().then(() => router.push('/login'));
+            signOut().then(() => router.push("/login"));
           }}
         >
           Sign Out
@@ -47,7 +54,9 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Listings</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Listings
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">0</div>
@@ -63,7 +72,9 @@ export default function DashboardPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Wallet Balance</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Wallet Balance
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">$0.00</div>
@@ -77,7 +88,7 @@ export default function DashboardPage() {
           <TabsTrigger value="opportunities">Opportunities</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="listings">
           <Card>
             <CardHeader>
@@ -96,7 +107,7 @@ export default function DashboardPage() {
             </CardFooter>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="opportunities">
           <Card>
             <CardHeader>
@@ -112,7 +123,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="history">
           <Card>
             <CardHeader>

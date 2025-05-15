@@ -1,4 +1,7 @@
-import { auth } from '@/lib/auth';
+import { auth } from "@/lib/auth";
+
+// Configure this route to use the Node.js runtime instead of Edge
+export const runtime = "nodejs";
 
 export const GET = auth.handler;
 export const POST = auth.handler;

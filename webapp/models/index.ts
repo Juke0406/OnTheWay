@@ -1,15 +1,15 @@
-import User, { IUser } from './User';
-import Listing, { IListing } from './Listing';
-import Bid, { IBid } from './Bid';
-import Review, { IReview } from './Review';
+import Bid, { IBid } from "./Bid";
+import Listing, { IListing } from "./Listing";
+import Review, { IReview } from "./Review";
+import User, { IUser } from "./User";
 
 export {
-  User,
-  Listing,
   Bid,
-  Review,
-  IUser,
-  IListing,
   IBid,
-  IReview
+  IListing,
+  IReview,
+  IUser as IUser,
+  Listing,
+  Review,
+  User as User,
 };

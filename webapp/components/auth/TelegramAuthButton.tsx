@@ -37,11 +37,11 @@ export function TelegramAuthButton({
 
   return (
     <div className="flex flex-col items-center space-y-4">
-      <div className="text-center mb-2">
+      {/* <div className="text-center mb-2">
         <p className="text-sm text-muted-foreground">
           Log in with your Telegram account
         </p>
-      </div>
+      </div> */}
 
       <div className="grid grid-cols-1 gap-2 w-full">
         <div className="flex justify-center">
@@ -55,15 +55,6 @@ export function TelegramAuthButton({
             onAuthCallback={handleAuthCallback}
           />
         </div>
-      </div>
-
-      <div className="text-center mt-2">
-        <p className="text-xs text-muted-foreground">
-          Having trouble? Try the{" "}
-          <a href="/telegram-debug" className="text-[#0088cc] hover:underline">
-            debug page
-          </a>
-        </p>
       </div>
     </div>
   );

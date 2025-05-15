@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Model } from 'mongoose';
+import mongoose, { Document, Model, Schema } from "mongoose";
 
 export interface IUser extends Document {
   userId: string;
@@ -51,6 +51,6 @@ const UserSchema: Schema = new Schema(
 );
 
 // Create the model only if it doesn't exist or we're not in a server context
-const User = mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
+const User = mongoose.models.User || mongoose.model<IUser>("User", UserSchema);
 
 export default User as Model<IUser>;

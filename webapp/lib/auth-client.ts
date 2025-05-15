@@ -1,17 +1,32 @@
 import { createAuthClient } from "better-auth/react";
 
+// Determine the current hostname and protocol
+const getCurrentHost = () => {
+  if (typeof window === "undefined") {
+    // Server-side rendering
+    return process.env.NEXT_PUBLIC_APP_URL || "https://otw.jiawei.dev";
+  } else {
+    // Client-side rendering - use the current window location
+    return `${window.location.protocol}//${window.location.host}`;
+  }
+};
+
+// Get the base URL using the current host
+const baseURL = getCurrentHost();
+
+// Configure the auth client with appropriate settings for the environment
 export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_APP_URL,
+  baseURL: baseURL,
   // We don't need any client-side plugins for Telegram auth
   // since it's handled by the server-side callback
-  // Add cookie options to ensure cookies work correctly with Cloudflare Tunnel
   cookieOptions: {
-    // These settings are important for Cloudflare Tunnel
+    // Use secure cookies for HTTPS
     secure: true,
-    sameSite: "none", // Allow cross-site cookies when using Cloudflare Tunnel
+    // Use lax for better compatibility
+    sameSite: "lax",
+    // Set path to root
     path: "/",
-    domain: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://otw.jiawei.dev")
-      .hostname,
+    // Don't set domain to ensure cookies work across subdomains
   },
 });
 
