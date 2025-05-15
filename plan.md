@@ -156,8 +156,8 @@ A platform that matches buyers and travelers in real-time using a web dashboard 
 - [x] Live location sharing
 - [x] Notifications for matched listings
 - [x] Bidding UI with inline buttons
-- [ ] OTP exchange & submission (Need to improve on the OTP side for travellers)
-- [ ] Confirmation and review prompts
+- [x] OTP exchange & submission
+- [x] Confirmation and review prompts
 
 ### 🌐 Web App
 

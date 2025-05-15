@@ -2,18 +2,17 @@ import TelegramBot from 'node-telegram-bot-api';
 import { initUserState } from '../state.js';
 
 export async function handleStart(bot: TelegramBot, msg: TelegramBot.Message): Promise<void> {
-  const chatId = msg.chat.id;
-  const userId = msg.from?.id;
-  const firstName = msg.from?.first_name || '';
-  const lastName = msg.from?.last_name;
-  const username = msg.from?.username;
-  
-  if (!userId) return;
-  
-  // Reset user state with all required parameters
-  await initUserState(userId, firstName, lastName, username);
-  
-  const welcomeMessage = `
+    const chatId = msg.chat.id;
+    const userId = msg.from?.id;
+    const firstName = msg.from?.first_name || '';
+    const lastName = msg.from?.last_name;
+    const username = msg.from?.username;
+
+    if (!userId) return;
+
+    await initUserState(userId, firstName, lastName, username);
+
+    const welcomeMessage = `
 Welcome to OnTheWay! 🚀
 
 I'm here to help you connect with travelers who can bring items to you or help you earn by delivering items to others.
@@ -27,6 +26,6 @@ I'm here to help you connect with travelers who can bring items to you or help y
 
 Let's get started!
 `;
-  
-  await bot.sendMessage(chatId, welcomeMessage, { parse_mode: 'Markdown' });
+
+    await bot.sendMessage(chatId, welcomeMessage, { parse_mode: 'Markdown' });
 }
