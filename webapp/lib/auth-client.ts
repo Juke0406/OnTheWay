@@ -1,3 +1,4 @@
+import { inferAdditionalFields } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 
 // Determine the current hostname and protocol
@@ -28,6 +29,33 @@ export const authClient = createAuthClient({
     path: "/",
     // Don't set domain to ensure cookies work across subdomains
   },
+  plugins: [
+    inferAdditionalFields({
+      user: {
+        username: {
+          type: "string",
+          required: true,
+          input: true,
+        },
+        telegramId: {
+          type: "number",
+          required: false,
+        },
+        walletBalance: {
+          type: "number",
+          required: false,
+          defaultValue: 0,
+          input: false, // Don't allow users to set this directly
+        },
+        rating: {
+          type: "number",
+          required: false,
+          defaultValue: 0,
+          input: false, // Don't allow users to set this directly
+        },
+      },
+    }),
+  ],
 });
 
 export const { signIn, signOut, useSession } = authClient;

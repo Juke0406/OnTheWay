@@ -36,6 +36,11 @@ const initializeAuthHandler = async () => {
     // Add custom fields to the user schema
     user: {
       additionalFields: {
+        username: {
+          type: "string",
+          required: true,
+          input: true,
+        },
         telegramId: {
           type: "number",
           required: false,

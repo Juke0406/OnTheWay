@@ -52,6 +52,7 @@ export const telegramPlugin = ({ botToken }: { botToken: string }) => {
 
           let telegramUserId: string | null = null;
           let userName: string = "";
+          let username: string | null = null;
           let photoUrl: string | null = null;
 
           if (source === "bot" && telegramId) {
@@ -98,6 +99,7 @@ export const telegramPlugin = ({ botToken }: { botToken: string }) => {
                     `${user.first_name || ""} ${user.last_name || ""}`.trim() ||
                     user.username ||
                     `Telegram User ${telegramUserId}`;
+                  username = user.username || null;
                   photoUrl = user.photo_url || null;
                 } else {
                   console.error("Invalid user data in payload");
@@ -156,6 +158,7 @@ export const telegramPlugin = ({ botToken }: { botToken: string }) => {
                 }`.trim() ||
                 params.get("username") ||
                 `Telegram User ${telegramUserId}`;
+              username = params.get("username");
               photoUrl = params.get("photo_url");
             }
 
@@ -195,6 +198,7 @@ export const telegramPlugin = ({ botToken }: { botToken: string }) => {
                 { telegramId: parseInt(telegramUserId) },
                 {
                   name: userName,
+                  username: username || undefined,
                   image: photoUrl || undefined,
                 },
                 { new: true }
@@ -250,6 +254,7 @@ export const telegramPlugin = ({ botToken }: { botToken: string }) => {
                 model: "user",
                 data: {
                   name: userName,
+                  username: username || undefined,
                   email: createPlaceholderEmail(telegramUserId),
                   emailVerified: false,
                   image: photoUrl || null,

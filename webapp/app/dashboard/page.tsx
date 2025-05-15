@@ -82,8 +82,8 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      <Tabs defaultValue="listings" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-8">
+      <Tabs defaultValue="listings">
+        <TabsList className="mb-8">
           <TabsTrigger value="listings">My Listings</TabsTrigger>
           <TabsTrigger value="opportunities">Opportunities</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>

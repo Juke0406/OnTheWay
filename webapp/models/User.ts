@@ -4,6 +4,7 @@ export interface IUser extends Document {
   userId: string;
   telegramId?: number;
   name: string;
+  username?: string; // Added Telegram username
   email?: string;
   image?: string;
   rating: number;
@@ -27,6 +28,10 @@ const UserSchema: Schema = new Schema(
     name: {
       type: String,
       required: true,
+    },
+    username: {
+      type: String,
+      sparse: true,
     },
     email: {
       type: String,
