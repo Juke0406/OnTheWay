@@ -1,0 +1,104 @@
+/* Full height map container */
+#map {
+  height: calc(100vh - 64px) !important; /* Subtract header height */
+  width: 100% !important;
+  position: relative;
+}
+
+/* Custom styles for map markers */
+.avatar-marker {
+  background-color: #fff;
+  padding: 3px;
+  border: 3px solid white;
+  border-radius: 50%;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); /* Bouncy effect */
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+/* Radar-like pulsing animation */
+@keyframes radar-pulse {
+  0% {
+    transform: scale(0.1);
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(30);
+    opacity: 0;
+  }
+}
+
+/* Apply the animation to the radius circle */
+.radius-circle {
+  position: relative !important;
+  overflow: visible !important;
+}
+
+/* Create multiple pulse rings */
+.radius-circle::before,
+.radius-circle::after,
+.radius-circle .pulse-ring {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: rgba(79, 70, 229, 0.6);
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.radius-circle::before {
+  animation: radar-pulse 3s infinite cubic-bezier(0, 0, 0.2, 1);
+}
+
+.radius-circle::after {
+  animation: radar-pulse 3s infinite 1s cubic-bezier(0, 0, 0.2, 1);
+}
+
+/* Add a third pulse ring with JavaScript */
+.pulse-ring {
+  animation: radar-pulse 3s infinite 2s cubic-bezier(0, 0, 0.2, 1) !important;
+}
+
+/* Custom info window styles */
+.custom-info-window {
+  padding: 12px;
+  border-radius: 8px;
+  max-width: 200px;
+}
+
+.custom-info-window h3 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.custom-info-window p {
+  margin: 0 0 5px 0;
+  font-size: 14px;
+}
+
+.live-location-badge {
+  display: inline-block;
+  background-color: #10b981;
+  color: white;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 12px;
+  margin-top: 5px;
+}
+
+/* Hover effect for markers - bubble-like */
+.avatar-marker:hover {
+  transform: scale(1.4);
+  box-shadow: 0 0 20px rgba(79, 70, 229, 0.8);
+  cursor: pointer;
+  z-index: 999 !important;
+  border-color: rgba(79, 70, 229, 1);
+}

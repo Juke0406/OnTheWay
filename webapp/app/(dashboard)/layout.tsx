@@ -69,7 +69,7 @@ export default function DashboardLayout({
               On the Way
             </Link>
             <Link
-              href="/dashboard/map"
+              href="/map"
               className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               <MapPin className="h-4 w-4" />

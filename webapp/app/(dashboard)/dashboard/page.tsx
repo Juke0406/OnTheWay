@@ -40,7 +40,7 @@ export default function DashboardPage() {
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <h1 className="text-2xl font-medium">Dashboard</h1>
         <Button
           variant="outline"
           onClick={() => {
@@ -59,7 +59,7 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
+            <div className="text-2xl font-medium">0</div>
           </CardContent>
         </Card>
         <Card>
@@ -67,7 +67,7 @@ export default function DashboardPage() {
             <CardTitle className="text-sm font-medium">Active Bids</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
+            <div className="text-2xl font-medium">0</div>
           </CardContent>
         </Card>
         <Card>
@@ -77,7 +77,7 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$0.00</div>
+            <div className="text-2xl font-medium">$0.00</div>
           </CardContent>
         </Card>
       </div>

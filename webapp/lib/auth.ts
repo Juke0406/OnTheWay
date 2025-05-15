@@ -116,17 +116,31 @@ export const auth = {
       try {
         const authHandler = await authHandlerPromise;
 
-        // Try to get the session with cache disabled
-        const url = new URL(req.url);
-        url.searchParams.set("disableCookieCache", "true");
+        // Handle the case when req.url might be undefined
+        if (req.url) {
+          try {
+            // Try to get the session with cache disabled
+            const url = new URL(req.url);
+            url.searchParams.set("disableCookieCache", "true");
 
-        // Create a new request with the updated URL
-        const requestWithoutCache = new Request(url.toString(), {
-          headers: req.headers,
-          method: req.method,
-        });
+            // Create a new request with the updated URL
+            const requestWithoutCache = new Request(url.toString(), {
+              headers: req.headers,
+              method: req.method,
+            });
 
-        return await authHandler.api.getSession(requestWithoutCache);
+            return await authHandler.api.getSession(requestWithoutCache);
+          } catch (urlError) {
+            console.warn(
+              "Error parsing URL, falling back to original request:",
+              urlError
+            );
+            // Fall back to using the original request
+          }
+        }
+
+        // If URL parsing failed or req.url is undefined, use the original request
+        return await authHandler.api.getSession(req);
       } catch (error) {
         console.error("Error in auth.api.getSession:", error);
         throw error;
