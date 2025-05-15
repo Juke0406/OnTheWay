@@ -46,25 +46,38 @@ export async function initUserState(
     lastName?: string,
     username?: string
 ): Promise<IUser> {
-    const user = await User.findOneAndUpdate(
-        { telegramId },
-        {
-            $set: {
-                telegramId,
-                firstName,
-                lastName,
-                username,
-                state: 'idle',
-                currentStep: undefined,
-                listingData: undefined,
-                currentListingId: undefined,
-                otpCode: undefined,
-                notifiedListingIds: []
+    try {
+        const user = await User.findOneAndUpdate(
+            { telegramId },
+            {
+                $set: {
+                    telegramId,
+                    firstName,
+                    lastName,
+                    username,
+                    state: 'idle',
+                    currentStep: undefined,
+                    listingData: undefined,
+                    currentListingId: undefined,
+                    otpCode: undefined,
+                    notifiedListingIds: []
+                }
+            },
+            { new: true, upsert: true }
+        );
+        return user;
+    } catch (error) {
+        // If duplicate key error, try to fetch the existing user
+        if (error && typeof error === 'object' && 'code' in error && error.code === 11000) {
+            const existingUser = await User.findOne({ telegramId });
+            if (!existingUser) {
+                throw new Error(`User with telegramId ${telegramId} not found after duplicate key error`);
             }
-        },
-        { new: true, upsert: true }
-    );
+            return existingUser;
+        }
+        throw error;
+    }
+}
 
-    return user;
 }
 
