@@ -83,7 +83,7 @@ export default function MapPage() {
 
     const mapOptions: google.maps.MapOptions = {
       center: defaultCenter,
-      zoom: 12,
+      zoom: 8, // Much lower zoom level to show a wider area (city-level view)
       mapTypeId: "roadmap", // Default to roadmap instead of satellite/hybrid
       tilt: webGLSupported ? 45 : 0, // Add a 45-degree tilt for 3D effect if WebGL is supported
       heading: 0, // Initial heading
@@ -373,11 +373,25 @@ export default function MapPage() {
       // Fit map to show all markers if there are any
       if (!bounds.isEmpty()) {
         newMap.fitBounds(bounds);
+
+        // Add a listener for when the bounds_changed event fires
+        // This ensures we don't zoom in too much even when fitting bounds
+        google.maps.event.addListenerOnce(
+          newMap,
+          "bounds_changed",
+          function () {
+            // If zoom level is too high (too zoomed in), set it to our preferred level
+            const currentZoom = newMap.getZoom();
+            if (currentZoom !== undefined && currentZoom > 12) {
+              newMap.setZoom(12);
+            }
+          }
+        );
       }
     } else {
       // If no users are available, set a nice default view
-      // Zoom out to show more of the world in 3D
-      newMap.setZoom(3);
+      // Use a lower zoom level to show a wider area (city-level view)
+      newMap.setZoom(8);
 
       // Add a slight tilt for 3D effect even when zoomed out
       setTimeout(() => {
