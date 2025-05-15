@@ -1,6 +1,6 @@
 import { createAuthEndpoint } from "better-auth/api";
 import type { BetterAuthPlugin } from "better-auth/types";
-import * as edgeCrypto from "../lib/edge-crypto";
+import * as crypto from "crypto";
 import { User } from "../models";
 
 // Helper function to convert base64 to string
@@ -69,15 +69,15 @@ export const telegramPlugin = ({ botToken }: { botToken: string }) => {
                 "Telegram OAuth callback detected with payload parameter"
               );
 
-              // Verify the hash using edge-compatible crypto
-              // First create a SHA-256 hash of the bot token to use as the key
-              const secretKeyHash = await edgeCrypto.sha256(botToken);
-
-              // Then create an HMAC of the payload using the key
-              const checkHash = await edgeCrypto.createHmac(
-                secretKeyHash,
-                payload
-              );
+              // Verify the hash
+              const secretKey = crypto
+                .createHash("sha256")
+                .update(botToken)
+                .digest();
+              const checkHash = crypto
+                .createHmac("sha256", secretKey)
+                .update(payload)
+                .digest("hex");
 
               if (hash !== checkHash) {
                 console.warn("Telegram hash verification failed!");
@@ -133,15 +133,15 @@ export const telegramPlugin = ({ botToken }: { botToken: string }) => {
 
               const dataCheckString = dataCheckArr.join("\n");
 
-              // Use edge-compatible crypto functions
-              // First create a SHA-256 hash of the bot token to use as the key
-              const secretKeyHash = await edgeCrypto.sha256(botToken);
+              const secretKey = crypto
+                .createHash("sha256")
+                .update(botToken)
+                .digest();
 
-              // Then create an HMAC of the data check string using the key
-              const calculatedHash = await edgeCrypto.createHmac(
-                secretKeyHash,
-                dataCheckString
-              );
+              const calculatedHash = crypto
+                .createHmac("sha256", secretKey)
+                .update(dataCheckString)
+                .digest("hex");
 
               if (calculatedHash !== hash) {
                 console.warn("Telegram hash verification failed!");

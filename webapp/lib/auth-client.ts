@@ -4,7 +4,7 @@ import { createAuthClient } from "better-auth/react";
 const getCurrentHost = () => {
   if (typeof window === "undefined") {
     // Server-side rendering
-    return process.env.NEXT_PUBLIC_APP_URL || "https://otw.jiawei.dev";
+    return process.env.NEXT_PUBLIC_APP_URL || "";
   } else {
     // Client-side rendering - use the current window location
     return `${window.location.protocol}//${window.location.host}`;
