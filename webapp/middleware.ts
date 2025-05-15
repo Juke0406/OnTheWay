@@ -11,7 +11,11 @@ export async function middleware(request: NextRequest) {
   const sessionCookie = getSessionCookie(request);
 
   // Simple check - if accessing protected routes and no session cookie, redirect to login
-  if (request.nextUrl.pathname.startsWith("/dashboard") && !sessionCookie) {
+  if (
+    (request.nextUrl.pathname.startsWith("/dashboard") ||
+      request.nextUrl.pathname.startsWith("/map")) &&
+    !sessionCookie
+  ) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 

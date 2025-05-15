@@ -1,6 +1,23 @@
 "use client";
 
+import { ListingForm } from "@/components/listing-form";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,10 +29,10 @@ import {
 import { signOut, useSession } from "@/lib/auth-client";
 import { micah } from "@dicebear/collection";
 import { createAvatar } from "@dicebear/core";
-import { LogOut, MapPin } from "lucide-react";
+import { ClipboardList, LogOut, Package, Plus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export default function DashboardLayout({
   children,
@@ -24,6 +41,9 @@ export default function DashboardLayout({
 }) {
   const { data: session, isPending } = useSession();
   const router = useRouter();
+  const [dashboardOpen, setDashboardOpen] = useState(false);
+  const [listDialogOpen, setListDialogOpen] = useState(false);
+  const [deliverDialogOpen, setDeliverDialogOpen] = useState(false);
 
   // All hooks must be called before any conditional returns
   const userData = useMemo(() => {
@@ -87,44 +107,116 @@ export default function DashboardLayout({
     return null; // Will redirect in the useEffect
   }
 
-  // Log session data to see structure
-  console.log("Session data:", session);
-
   const handleSignOut = () => {
     signOut().then(() => router.push("/login"));
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <header className="bg-background backdrop-blur-md">
-        <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="font-semibold">
-              On the Way
-            </Link>
-            <Link
-              href="/map"
-              className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <MapPin className="h-4 w-4" />
-              <span>Map</span>
-            </Link>
-          </div>
+    <div className="h-screen w-screen overflow-hidden relative">
+      {/* Main content area - Map will be the full screen content */}
+      <main className="absolute inset-0">{children}</main>
 
+      {/* Bottom Navigation Bar - Floating over the map */}
+      <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-10 bg-background/80 backdrop-blur-sm border rounded-full px-2 py-1 shadow-lg">
+        <div className="flex justify-between items-center gap-2">
+          {/* Dashboard Button */}
+          <Drawer open={dashboardOpen} onOpenChange={setDashboardOpen}>
+            <DrawerTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full h-12 w-12 flex items-center justify-center"
+              >
+                <ClipboardList className="h-6 w-6" />
+              </Button>
+            </DrawerTrigger>
+            <DrawerContent>
+              <DrawerHeader>
+                <DrawerTitle>Dashboard</DrawerTitle>
+              </DrawerHeader>
+              <div className="px-4 pb-4">
+                {/* Dashboard content will be injected here */}
+                <iframe
+                  src="/dashboard"
+                  className="w-full h-[70vh] border-none"
+                  title="Dashboard"
+                />
+              </div>
+            </DrawerContent>
+          </Drawer>
+
+          {/* List Something Button */}
+          <Dialog open={listDialogOpen} onOpenChange={setListDialogOpen}>
+            <DialogTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full h-12 w-12 flex items-center justify-center"
+              >
+                <Plus className="h-6 w-6" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>List Something</DialogTitle>
+                <DialogDescription>
+                  Create a new listing for something you need delivered.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4">
+                <ListingForm onClose={() => setListDialogOpen(false)} />
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Deliver Things Button */}
+          <Dialog open={deliverDialogOpen} onOpenChange={setDeliverDialogOpen}>
+            <DialogTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full h-12 w-12 flex items-center justify-center"
+              >
+                <Package className="h-6 w-6" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Deliver Things</DialogTitle>
+                <DialogDescription>
+                  Start delivering items to earn money.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4">
+                <p className="mb-4">
+                  To start delivering, you need to share your live location with
+                  our Telegram bot.
+                </p>
+                <Button asChild className="w-full">
+                  <Link href="https://t.me/onthewaysupportbot" target="_blank">
+                    Open Telegram Bot
+                  </Link>
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* User Profile Button */}
           <DropdownMenu>
-            <DropdownMenuTrigger className="focus:outline-none">
-              <div className="flex items-center gap-2 hover:bg-accent hover:text-accent-foreground rounded-md p-2 transition-colors">
-                <Avatar>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full h-12 w-12 flex items-center justify-center"
+              >
+                <Avatar className="h-8 w-8">
                   <AvatarImage
                     src={userData.avatarSvg}
                     alt={userData.userName}
                   />
                   <AvatarFallback>{userData.userInitials}</AvatarFallback>
                 </Avatar>
-                <span className="hidden sm:inline-block font-medium">
-                  {userData.userName}
-                </span>
-              </div>
+              </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>
@@ -133,11 +225,6 @@ export default function DashboardLayout({
                   {userData.username && (
                     <span className="text-xs text-muted-foreground">
                       @{userData.username}
-                    </span>
-                  )}
-                  {userData.telegramId && !userData.username && (
-                    <span className="text-xs text-muted-foreground">
-                      Telegram ID: {userData.telegramId}
                     </span>
                   )}
                 </div>
@@ -168,9 +255,7 @@ export default function DashboardLayout({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-      </header>
-
-      <main className="flex-1">{children}</main>
+      </div>
     </div>
   );
 }

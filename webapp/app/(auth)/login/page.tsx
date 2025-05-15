@@ -62,7 +62,7 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/dashboard");
+      router.push("/map");
     } catch (err) {
       setError("An unexpected error occurred");
       console.error(err);
@@ -83,7 +83,7 @@ export default function LoginPage() {
         <CardContent>
           <div className="space-y-4">
             <TelegramAuthButton
-              onSuccess={() => router.push("/dashboard")}
+              onSuccess={() => router.push("/map")}
               onError={(error: unknown) =>
                 setError(
                   error instanceof Error

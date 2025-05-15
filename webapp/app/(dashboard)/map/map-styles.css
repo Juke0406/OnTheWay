@@ -1,8 +1,37 @@
 /* Full height map container */
 #map {
-  height: calc(100vh - 64px) !important; /* Subtract header height */
+  height: 100vh !important; /* Full viewport height */
   width: 100% !important;
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+/* Hide all Google Maps UI controls */
+.gmnoprint,
+.gm-style-cc,
+.gm-fullscreen-control,
+.gm-svpc {
+  display: none !important;
+}
+
+/* Hide Google logo */
+a[href^="https://maps.google.com/maps"]
+{
+  display: none !important;
+}
+
+/* Hide any remaining UI elements */
+.gm-style-mtc,
+.gm-control-active {
+  display: none !important;
+}
+
+/* Allow info windows to display */
+.gm-style-iw-a {
+  display: block !important;
 }
 
 /* Custom styles for map markers */

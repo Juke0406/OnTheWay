@@ -22,13 +22,13 @@ export default function Home() {
               className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
               href="/login"
             >
-              Login / Sign Up
+              Get Started
             </Link>
             <Link
               className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-              href="/dashboard"
+              href="/map"
             >
-              Dashboard
+              Map
             </Link>
           </div>
         </div>
@@ -42,9 +42,9 @@ export default function Home() {
         </Link>
         <Link
           className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="/dashboard"
+          href="/map"
         >
-          Dashboard
+          Map
         </Link>
         <p className="text-sm text-muted-foreground">
           © 2025 OnTheWay. All rights reserved.

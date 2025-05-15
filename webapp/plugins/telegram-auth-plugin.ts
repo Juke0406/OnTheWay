@@ -331,9 +331,7 @@ export const telegramPlugin = ({ botToken }: { botToken: string }) => {
             console.log("Session token:", session.token);
 
             // Redirect based on user status
-            const redirectTo = userJustCreated
-              ? "/dashboard?new=true"
-              : "/dashboard";
+            const redirectTo = userJustCreated ? "/map?new=true" : "/map";
             return redirect(redirectTo);
           } catch (error) {
             console.error("Error during Telegram auth callback:", error);

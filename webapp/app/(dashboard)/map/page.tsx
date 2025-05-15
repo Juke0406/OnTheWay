@@ -94,16 +94,14 @@ export default function MapPage() {
           stylers: [{ visibility: "off" }],
         },
       ],
-      mapTypeControl: true, // Allow switching between map types
-      mapTypeControlOptions: {
-        style: google.maps.MapTypeControlStyle.DROPDOWN_MENU,
-        position: google.maps.ControlPosition.TOP_RIGHT,
-        mapTypeIds: ["roadmap", "satellite", "hybrid", "terrain"],
-      },
-      streetViewControl: true, // Enable street view
-      fullscreenControl: true, // Enable fullscreen
-      rotateControl: webGLSupported, // Enable rotation control for 3D if WebGL is supported
-      scaleControl: true, // Show scale
+      mapTypeControl: false, // Disable map type control (satellite/roadmap toggle)
+      streetViewControl: false, // Disable street view
+      fullscreenControl: false, // Disable fullscreen
+      rotateControl: false, // Disable rotation control
+      zoomControl: false, // Disable zoom controls
+      scaleControl: false, // Disable scale control
+      panControl: false, // Disable pan control
+      disableDefaultUI: true, // Disable all default UI controls
       gestureHandling: "greedy", // Makes the map easier to use on touch devices
     };
 
@@ -387,8 +385,8 @@ export default function MapPage() {
       setTimeout(() => {
         try {
           if (webGLSupported) {
-            // Set to roadmap mode to match the default view
-            newMap.setMapTypeId("roadmap");
+            // Keep the default roadmap mode
+            // No need to set map type as we've disabled the controls
 
             // Force the 3D view with tilt
             // setTilt is available but not in the types
@@ -429,20 +427,20 @@ export default function MapPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-[calc(100vh-64px)] w-full">
+      <div className="absolute inset-0 flex items-center justify-center">
         <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="h-full w-full relative">
+    <div className="absolute inset-0">
       {error && (
         <div className="absolute top-4 left-4 right-4 z-10 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
           {error}
         </div>
       )}
-      <div id="map" className="w-full h-[calc(100vh-64px)]"></div>
+      <div id="map" className="absolute inset-0"></div>
     </div>
   );
 }

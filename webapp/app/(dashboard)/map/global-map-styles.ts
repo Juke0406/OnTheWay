@@ -8,7 +8,7 @@
  */
 export function applyCustomInfoWindowStyles() {
   // Apply custom styles to all info windows
-  const style = document.createElement('style');
+  const style = document.createElement("style");
   style.textContent = `
     .gm-style .gm-style-iw-c {
       padding: 0 !important;
@@ -49,7 +49,7 @@ export function applyCustomInfoWindowStyles() {
       margin-top: 5px !important;
     }
   `;
-  
+
   document.head.appendChild(style);
 }
 
@@ -58,7 +58,7 @@ export function applyCustomInfoWindowStyles() {
  */
 export function applyCustomCircleStyles() {
   // Apply pulsing animation to radius circles
-  const style = document.createElement('style');
+  const style = document.createElement("style");
   style.textContent = `
     @keyframes pulse {
       0% {
@@ -79,6 +79,6 @@ export function applyCustomCircleStyles() {
       animation: pulse 2s infinite;
     }
   `;
-  
+
   document.head.appendChild(style);
 }
