@@ -58,7 +58,7 @@ export async function handleCallbackQuery(bot: TelegramBot, query: TelegramBot.C
   } else if (data.startsWith('radius_')) {
     await handleRadiusSelection(bot, chatId, userId, data);
   } else if (data.startsWith('bid_')) {
-    await handleBidResponse(bot, chatId, userId, data);
+    await handleBidResponse(bot, chatId, userId, data, query); // Pass the query parameter
   } else if (data.startsWith('rate_')) {
     await handleRatingSubmission(bot, chatId, userId, data);
   }
@@ -95,15 +95,19 @@ async function handleAvailabilityResponse(
     return;
   }
   
-  // User is available, ask for location
+  // User is available, ask for live location with clearer instructions
   await bot.sendMessage(
     chatId,
-    "Great! Please share your current location so we can match you with nearby requests.",
+    "Great! To be available for deliveries, please share your *live location* so we can match you with nearby requests in real-time.\n\n" +
+    "📍 *How to share live location:*\n" +
+    "1. Tap the 📎 attachment button (bottom left)\n" +
+    "2. Select 'Location'\n" +
+    "3. Choose 'Share Live Location'\n" +
+    "4. Select a duration (at least 1 hour recommended)",
     {
+      parse_mode: 'Markdown',
       reply_markup: {
-        keyboard: [[{ text: "📍 Share Location", request_location: true }]],
-        resize_keyboard: true,
-        one_time_keyboard: true
+        remove_keyboard: true
       }
     }
   );
@@ -116,6 +120,8 @@ async function handleRadiusSelection(
   data: string
 ): Promise<void> {
   const radius = parseInt(data.split('_')[1]);
+  
+  console.log(`⭕ [RADIUS] User ${userId} set availability radius to ${radius}km`);
   
   // Get current user state
   const currentState = getUserState(userId);
@@ -144,6 +150,7 @@ Use /status anytime to see available requests or /available to update your statu
   });
   
   // Find and show nearby listings
+  console.log(`🔍 [INITIAL SEARCH] Checking for nearby listings for new traveler ${userId} with radius ${radius}km`);
   await showNearbyListings(bot, chatId, userId, radius);
 }
 
@@ -281,7 +288,8 @@ async function handleBidResponse(
   bot: TelegramBot, 
   chatId: number, 
   userId: number, 
-  data: string
+  data: string,
+  query: TelegramBot.CallbackQuery
 ): Promise<void> {
   try {    
     // Handle different bid-related actions based on the callback data
@@ -417,10 +425,26 @@ We've notified the buyer. Waiting for their response...
       // Extract the listing ID (everything after 'bid_decline_')
       const listingId = data.substring('bid_decline_'.length);
       
-      await bot.sendMessage(
-        chatId,
-        "You've declined this delivery request. We'll notify you of other opportunities."
-      );
+      // Delete the message with the delivery request
+      if (query.message) {
+        try {
+          await bot.deleteMessage(chatId, query.message.message_id);
+          console.log(`🗑️ [DELETE] Deleted declined delivery request message for user ${userId}, listing ${listingId}`);
+        } catch (error) {
+          console.error('Error deleting message:', error);
+          // If we can't delete the message, send a new message instead
+          await bot.sendMessage(
+            chatId,
+            "You've declined this delivery request. We'll notify you of other opportunities."
+          );
+        }
+      } else {
+        // Fallback if message is not available
+        await bot.sendMessage(
+          chatId,
+          "You've declined this delivery request. We'll notify you of other opportunities."
+        );
+      }
       
     } else if (data.startsWith('bid_counter_')) {
       // Extract the listing ID (everything after 'bid_counter_')

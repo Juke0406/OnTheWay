@@ -10,6 +10,7 @@ export interface IAvailabilityData {
   isAvailable: boolean;
   radius?: number;
   location?: ILocation;
+  isLiveLocation?: boolean;
 }
 
 export interface IListingData {
@@ -35,6 +36,7 @@ export interface IUser extends Document {
   rating: number;
   pickupAddress?: string;
   destinationAddress?: string;
+  notifiedListingIds?: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -88,6 +90,7 @@ const UserSchema: Schema = new Schema({
   otpCode: { type: String },
   walletBalance: { type: Number, default: 0 },
   rating: { type: Number, default: 5 },
+  notifiedListingIds: { type: [String], default: [] },
 }, { timestamps: true });
 
 export default mongoose.model<IUser>('User', UserSchema);

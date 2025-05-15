@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface ILocation {
   latitude: number;
@@ -13,6 +13,7 @@ export enum ListingStatus {
 }
 
 export interface IListing extends Document {
+  _id: Types.ObjectId;
   buyerId: number;
   itemDescription: string;
   itemPrice: number;
@@ -20,7 +21,7 @@ export interface IListing extends Document {
   pickupLocation?: ILocation;
   destinationLocation?: ILocation;
   status: ListingStatus;
-  acceptedBidId?: mongoose.Types.ObjectId;
+  acceptedBidId?: Types.ObjectId;
   travelerId?: number;
   otpBuyer?: string;
   otpTraveler?: string;

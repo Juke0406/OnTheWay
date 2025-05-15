@@ -67,7 +67,7 @@ export async function handleListings(bot: TelegramBot, msg: TelegramBot.Message)
       
       await bot.sendMessage(
         chatId,
-        `To see delivery requests near you, please share your current location. We'll show requests within ${FIXED_RADIUS}km of your location:`,
+        `To see delivery requests near you, please share your location. We'll show requests within ${FIXED_RADIUS}km of your location.`,
         {
           reply_markup: {
             keyboard: [[{ text: "📍 Share Location", request_location: true }]],
@@ -92,18 +92,41 @@ export async function showNearbyListings(
   chatId: number,
   userId: number,
   radius: number,
-  userLocation: { latitude: number, longitude: number }
+  userLocation: { latitude: number, longitude: number },
+  quietMode: boolean = false // Add a parameter for quiet mode
 ): Promise<void> {
   try {
+    console.log(`🔍 [SEARCH] showNearbyListings called for user ${userId} with radius ${radius}km, quietMode=${quietMode}`);
+    
+    // Debug: Check user state before processing
+    const userStateBefore = await getUserState(userId);
+    console.log(`🔍 [DEBUG] User ${userId} state before processing:`, 
+      JSON.stringify({
+        isAvailable: userStateBefore.availabilityData?.isAvailable,
+        radius: userStateBefore.availabilityData?.radius,
+        location: userStateBefore.availabilityData?.location
+      })
+    );
+    
+    // Check if user is available - this determines if we show decline buttons
+    const isUserAvailable = userStateBefore.availabilityData?.isAvailable || false;
+    
     if (!userLocation) {
-      await bot.sendMessage(chatId, "We couldn't determine your location. Please try again.");
+      console.log(`⚠️ [ERROR] Could not determine location for user ${userId}`);
+      if (!quietMode) {
+        await bot.sendMessage(chatId, "We couldn't determine your location. Please try again.");
+      }
       return;
     }
+    
+    console.log(`🔍 [SEARCH] User ${userId} searching for listings within ${radius}km radius of ${userLocation.latitude}, ${userLocation.longitude}`);
     
     // Find listings within the user's radius
     const nearbyListings = await Listing.find({
       status: ListingStatus.OPEN
     }).limit(50); // Get more listings initially, then filter
+    
+    console.log(`📊 [RESULTS] Found ${nearbyListings.length} open listings in database`);
     
     // Filter and sort listings by distance to pickup location
     const listingsWithDistance = nearbyListings
@@ -122,24 +145,76 @@ export async function showNearbyListings(
       .filter(item => item.distance <= radius) // Only include listings within radius
       .sort((a, b) => a.distance - b.distance); // Sort by distance
     
+    console.log(`📊 [FILTERED] ${listingsWithDistance.length} listings are within ${radius}km radius of user ${userId}`);
+    
     if (listingsWithDistance.length === 0) {
-      await bot.sendMessage(
-        chatId, 
-        "There are no delivery requests in your area right now. Try again later or increase your radius with /available."
-      );
+      if (!quietMode) {
+        await bot.sendMessage(
+          chatId, 
+          "There are no delivery requests in your area right now. Try again later or increase your radius with /available."
+        );
+      }
       return;
     }
     
-    // Show all nearby listings
-    await bot.sendMessage(
-      chatId,
-      `Found ${listingsWithDistance.length} delivery requests near your location:`
+    // Get the user state to check for already notified listings
+    const userState = await getUserState(userId);
+    const notifiedListings = userState.notifiedListingIds || [];
+    
+    // Filter out listings the user has already been notified about
+    const newListings = listingsWithDistance.filter(
+      item => !notifiedListings.includes(item.listing._id.toString())
     );
     
-    // Limit to 10 listings to avoid flooding
-    const limitedListings = listingsWithDistance.slice(0, 10);
+    console.log(`📊 [NEW] ${newListings.length} new listings that user ${userId} hasn't been notified about yet`);
+    
+    if (newListings.length === 0) {
+      if (!quietMode) {
+        await bot.sendMessage(
+          chatId,
+          `Found ${listingsWithDistance.length} delivery requests near your location, but you've already been notified about them.`
+        );
+      }
+      return;
+    }
+    
+    // In quiet mode, only notify about new listings
+    // In regular mode, show all nearby listings
+    const listingsToShow = quietMode ? newListings : listingsWithDistance;
+    
+    // Limit to 3 listings for live location updates to avoid flooding
+    const limitedListings = quietMode ? 
+      listingsToShow.slice(0, 3) : 
+      listingsToShow.slice(0, 10);
+    
+    console.log(`📨 [NOTIFY] Sending ${limitedListings.length} listings to user ${userId}`);
+    
+    if (!quietMode) {
+      await bot.sendMessage(
+        chatId,
+        `Found ${listingsWithDistance.length} delivery requests near your location:`
+      );
+    } else if (limitedListings.length > 0) {
+      await bot.sendMessage(
+        chatId,
+        `📍 Based on your updated location, we found ${limitedListings.length} new delivery ${limitedListings.length === 1 ? 'request' : 'requests'} nearby:`
+      );
+    }
+    
+    // Track the new listing IDs we're notifying about
+    const newNotifiedListings = [
+      ...notifiedListings,
+      ...limitedListings.map(item => item.listing._id.toString())
+    ];
+    
+    // Update the user's notified listings
+    updateUserState(userId, {
+      notifiedListingIds: newNotifiedListings
+    });
     
     for (const { listing, distance } of limitedListings) {
+      console.log(`📦 [LISTING] Sending listing #${listing._id.toString()} to user ${userId} (${distance.toFixed(1)}km away)`);
+      
       // Get human-readable addresses for pickup and destination
       const pickupAddress = await getAddressFromCoordinates(
         listing.pickupLocation!.latitude,
@@ -163,7 +238,7 @@ export async function showNearbyListings(
       }
       
       const listingMessage = `
-📦 *Delivery Request #${listing._id}*
+📦 *Delivery Request #${listing._id.toString()}*
 
 Item: ${listing.itemDescription}
 Price: $${listing.itemPrice}
@@ -177,12 +252,26 @@ Distance: ${distance.toFixed(1)} km away
       // Create inline keyboard with map buttons and accept option
       const inlineKeyboard: TelegramBot.InlineKeyboardButton[][] = [
         [
-          { text: "✅ Accept Delivery", callback_data: `bid_accept_${listing._id}` }
-        ],
-        [
-          { text: "🗺️ View Pickup Map", url: pickupMapUrl }
+          { text: "✅ Accept Delivery", callback_data: `bid_accept_${listing._id.toString()}` }
         ]
       ];
+      
+      // Only add decline button for available users or when not browsing listings
+      if (isUserAvailable || userStateBefore.state !== ConversationState.VIEWING_LISTINGS) {
+        inlineKeyboard[0].push(
+          { text: "❌ Decline", callback_data: `bid_decline_${listing._id.toString()}` }
+        );
+      }
+      
+      // Add counter offer button
+      inlineKeyboard.push([
+        { text: "💰 Offer Bid", callback_data: `bid_counter_${listing._id.toString()}` }
+      ]);
+      
+      // Add map buttons
+      inlineKeyboard.push([
+        { text: "🗺️ View Pickup Map", url: pickupMapUrl }
+      ]);
       
       // Add destination map button if available
       if (destinationMapUrl) {
@@ -202,17 +291,29 @@ Distance: ${distance.toFixed(1)} km away
       await new Promise(resolve => setTimeout(resolve, 500));
     }
     
-    if (listingsWithDistance.length > 10) {
+    if (!quietMode && listingsWithDistance.length > 10) {
       await bot.sendMessage(
         chatId,
         `Showing 10 of ${listingsWithDistance.length} available requests. Use /available to update your preferences.`
       );
     }
-  } catch (error) {
-    console.error('Error finding nearby listings:', error);
-    await bot.sendMessage(
-      chatId,
-      "There was an error finding delivery requests in your area. Please try again later."
+    
+    // Debug: Check user state after processing
+    const userStateAfter = await getUserState(userId);
+    console.log(`🔍 [DEBUG] User ${userId} state after processing:`, 
+      JSON.stringify({
+        isAvailable: userStateAfter.availabilityData?.isAvailable,
+        radius: userStateAfter.availabilityData?.radius,
+        location: userStateAfter.availabilityData?.location
+      })
     );
+  } catch (error) {
+    console.error(`❌ [ERROR] Error finding nearby listings for user ${userId}:`, error);
+    if (!quietMode) {
+      await bot.sendMessage(
+        chatId,
+        "There was an error finding delivery requests in your area. Please try again later."
+      );
+    }
   }
 }

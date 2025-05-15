@@ -19,7 +19,8 @@ export async function getUserState(telegramId: number): Promise<IUser> {
     // User doesn't exist, create a new one
     user = new User({
       telegramId,
-      state: 'idle' // Use string value directly to avoid circular reference
+      state: 'idle', // Use string value directly to avoid circular reference
+      notifiedListingIds: [] // Initialize empty array for tracking notified listings
     });
     await user.save();
   }
@@ -60,7 +61,8 @@ export async function initUserState(
         currentStep: undefined,
         listingData: undefined,
         currentListingId: undefined,
-        otpCode: undefined
+        otpCode: undefined,
+        notifiedListingIds: [] // Initialize empty array for tracking notified listings
       }
     },
     { new: true, upsert: true }

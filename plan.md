@@ -153,7 +153,7 @@ A platform that matches buyers and travelers in real-time using a web dashboard 
 - [x] Handle /start, /newrequest, /available, /accept, /status, /listings
 - [ ] Message parsing + Gemini integration
 - [x] Multi-turn conversation for form filling
-- [ ] Live location sharing
+- [x] Live location sharing
 - [x] Notifications for matched listings
 - [x] Bidding UI with inline buttons
 - [ ] OTP exchange & submission (Need to improve on the OTP side for travellers)
