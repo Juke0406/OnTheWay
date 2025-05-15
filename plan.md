@@ -158,6 +158,7 @@ A platform that matches buyers and travelers in real-time using a web dashboard 
 - [x] Bidding UI with inline buttons
 - [x] OTP exchange & submission
 - [x] Confirmation and review prompts
+- [x] Topup and wallet balance commands
 
 ### 🌐 Web App
 

@@ -335,10 +335,8 @@ Fee: $${listing.maxFee}
 
 The traveler will purchase and deliver your item. When they arrive:
 
-1. The traveler will show you their OTP: ${travelerOtp}
-2. Verify it matches what you see here
-3. Share your OTP with them: ${buyerOtp}
-4. Enter their OTP in this chat to confirm delivery
+1. Share your OTP with them: ${buyerOtp}
+2. Enter their OTP in this chat to confirm delivery
 
 *Your OTP code is: ${buyerOtp}*
       `;
@@ -365,8 +363,7 @@ Your Fee: $${listing.maxFee}
 Please purchase the item and meet the buyer at the delivery location. When you meet:
 
 1. Show the buyer your OTP: ${travelerOtp}
-2. The buyer will share their OTP with you
-3. Enter their OTP in this chat to confirm delivery
+2. Enter their OTP in this chat to confirm delivery
 
 *Your OTP code is: ${travelerOtp}*
         `,
@@ -501,10 +498,8 @@ Fee: $${bid.proposedFee}
 
 The traveler will purchase and deliver your item. When they arrive:
 
-1. The traveler will show you their OTP: ${travelerOtp}
-2. Verify it matches what you see here
-3. Share your OTP with them: ${buyerOtp}
-4. Enter their OTP in this chat to confirm delivery
+1. Share your OTP with them: ${buyerOtp}
+2. Enter their OTP in this chat to confirm delivery
 
 *Your OTP code is: ${buyerOtp}*
           `,
@@ -524,8 +519,7 @@ Your Fee: $${bid.proposedFee}
 Please purchase the item and meet the buyer at the delivery location. When you meet:
 
 1. Show the buyer your OTP: ${travelerOtp}
-2. The buyer will share their OTP with you
-3. Enter their OTP in this chat to confirm delivery
+2. Enter their OTP in this chat to confirm delivery
 
 *Your OTP code is: ${travelerOtp}*
           `,

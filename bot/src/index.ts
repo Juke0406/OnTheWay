@@ -6,12 +6,13 @@ import { connectDB } from './db.js';
 import { handleStart } from './commands/start.js';
 import { handleNewRequest } from './commands/newRequest.js';
 import { handleAvailable } from './commands/available.js';
-import { handleAccept } from './commands/accept.js';
+import { handleAccept, handleTopup } from './commands/accept.js';
 import { handleStatus } from './commands/status.js';
 import { handleLocation, setupLiveLocationTracking, handleStopSharing, handleStopLiveLocation } from './handlers/location.js';
 import { handleCallbackQuery } from './handlers/callbackQuery.js';
 import { handleText } from './handlers/text.js';
 import { handleListings } from './commands/listings.js';
+import { handleWallet } from './commands/wallet.js';
 
 if (!process.env.TELEGRAM_BOT_TOKEN) {
     process.exit(1);
@@ -40,6 +41,8 @@ bot.onText(/\/accept (.+)/, (msg, match) => handleAccept(bot, msg, match));
 bot.onText(/\/status/, (msg) => handleStatus(bot, msg));
 bot.onText(/\/listings/, (msg) => handleListings(bot, msg));
 bot.onText(/\/stopsharing/, (msg) => handleStopSharing(bot, msg));
+bot.onText(/\/topup/, (msg) => handleTopup(bot, msg));
+bot.onText(/\/wallet/, (msg) => handleWallet(bot, msg));
 
 bot.on('location', (msg) => handleLocation(bot, msg));
 

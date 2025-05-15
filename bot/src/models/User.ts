@@ -54,7 +54,7 @@ const CONVERSATION_STATES = [
 const UserSchema: Schema = new Schema({
     telegramId: { type: Number, required: true, unique: true },
     username: { type: String },
-    firstName: { type: String, required: true },
+    firstName: { type: String, default: "User" },
     lastName: { type: String },
     state: {
         type: String,

@@ -23,6 +23,8 @@ I'm here to help you connect with travelers who can bring items to you or help y
 /listings - View delivery requests near you
 /accept - Accept a delivery request
 /status - Check your active listings and deliveries
+/wallet - View your wallet balance
+/topup - Add funds to your wallet
 
 Let's get started!
 `;

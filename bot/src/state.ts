@@ -8,7 +8,8 @@ export enum ConversationState {
     BIDDING = 'bidding',
     CONFIRMING_DELIVERY = 'confirming_delivery',
     RATING = 'rating',
-    VIEWING_LISTINGS = 'viewing_listings'
+    VIEWING_LISTINGS = 'viewing_listings',
+    TOPUP = 'topup'
 }
 
 export async function getUserState(telegramId: number): Promise<IUser> {

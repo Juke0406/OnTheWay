@@ -39,8 +39,16 @@ export async function handleText(bot: TelegramBot, msg: TelegramBot.Message): Pr
         case ConversationState.CONFIRMING_DELIVERY:
             await handleDeliveryConfirmation(bot, msg);
             break;
+        case ConversationState.TOPUP:
+            await handleTopup(bot, msg);
+            break;
         default:
-            await bot.sendMessage(chatId, "I'm not sure what you mean. Try using one of the commands like /newrequest or /available.");
+            // Check if we're in a topup flow based on currentStep
+            if (userState.currentStep === 'topup_amount') {
+                await handleTopup(bot, msg);
+            } else {
+                await bot.sendMessage(chatId, "I'm not sure what you mean. Try using one of the commands like /newrequest or /available.");
+            }
     }
 }
 
@@ -219,23 +227,47 @@ async function handleListingCreation(bot: TelegramBot, msg: TelegramBot.Message,
                 destinationLocation: userStateForFee.listingData?.destinationLocation
             };
 
-            updateUserState(userId, {
-                listingData,
-                state: ConversationState.IDLE,
-                currentStep: undefined
-            });
+            const user = await User.findOne({ telegramId: userId });
+            const totalCost = listingData.itemPrice + fee;
+            const initialPayment = totalCost * 0.5;
 
+            if (user!.walletBalance < initialPayment) {
+                await bot.sendMessage(
+                    chatId,
+                    `You don't have enough balance to create this listing. You need $${initialPayment} (50% of total cost). Your current balance is $${user!.walletBalance}. Please use /topup to add funds.`,
+                    { reply_markup: { force_reply: true } }
+                );
+                return;
+            }
+
+            // Deduct initial payment
+            user!.walletBalance -= initialPayment;
+            await user!.save();
+
+            // Create the listing
             const newListing = new Listing({
                 buyerId: userId,
                 itemDescription: listingData.itemDescription,
                 itemPrice: listingData.itemPrice,
-                maxFee: listingData.maxFee,
+                maxFee: fee,
                 pickupLocation: listingData.pickupLocation,
                 destinationLocation: listingData.destinationLocation,
                 status: ListingStatus.OPEN
             });
 
             await newListing.save();
+
+            // Update user state and notify
+            updateUserState(userId, {
+                listingData,
+                state: ConversationState.IDLE,
+                currentStep: undefined
+            });
+
+            await bot.sendMessage(
+                chatId,
+                `Your delivery request has been created! (ID: ${newListing._id})\n\n💰 $${initialPayment} (50% of total cost) has been reserved from your wallet. Your current balance: $${user!.walletBalance}`
+            );
 
             await notifyNearbyTravelers(bot, newListing);
 
@@ -452,6 +484,33 @@ async function handleDeliveryConfirmation(bot: TelegramBot, msg: TelegramBot.Mes
         if (bothConfirmed) {
             listing.status = ListingStatus.COMPLETED;
             listing.deliveryConfirmed = true;
+            
+            // Process final payment
+            const buyer = await User.findOne({ telegramId: listing.buyerId });
+            const traveler = await User.findOne({ telegramId: listing.travelerId });
+            const acceptedBid = await Bid.findById(listing.acceptedBidId);
+            
+            // Make sure all required entities exist
+            if (!buyer || !traveler || !acceptedBid || !listing.travelerId) {
+                await bot.sendMessage(
+                    chatId,
+                    "There was an error processing the payment. Please contact support."
+                );
+                return;
+            }
+            
+            const totalCost = listing.itemPrice + acceptedBid.proposedFee;
+            const finalPayment = totalCost * 0.5; // Remaining 50%
+            const travelerPayment = totalCost * 0.95; // 95% of total goes to traveler
+            
+            // Deduct final payment from buyer
+            buyer.walletBalance -= finalPayment;
+            
+            // Add payment to traveler
+            traveler.walletBalance += travelerPayment;
+            
+            await buyer.save();
+            await traveler.save();
             await listing.save();
 
             updateUserState(userId, {
@@ -472,11 +531,19 @@ async function handleDeliveryConfirmation(bot: TelegramBot, msg: TelegramBot.Mes
 
             const completionMessage = "🎉 Delivery completed successfully! Both parties have confirmed the exchange.";
 
-            await bot.sendMessage(chatId, completionMessage);
+            // Send transaction details to buyer
+            await bot.sendMessage(
+                listing.buyerId, 
+                `${completionMessage}\n\n💰 *Transaction Details*\nFinal payment: $${finalPayment} deducted\nYour new wallet balance: $${buyer.walletBalance}`,
+                { parse_mode: 'Markdown' }
+            );
 
-            if (otherUserId) {
-                await bot.sendMessage(otherUserId, completionMessage);
-            }
+            // Send transaction details to traveler - with null check
+            await bot.sendMessage(
+                listing.travelerId, 
+                `${completionMessage}\n\n💰 *Transaction Details*\nPayment received: $${travelerPayment}\nYour new wallet balance: $${traveler.walletBalance}`,
+                { parse_mode: 'Markdown' }
+            );
 
             await promptForRating(bot, chatId, userId, listing);
 
@@ -538,7 +605,8 @@ async function notifyNearbyTravelers(bot: TelegramBot, listing: any): Promise<vo
         });
 
         for (const traveler of availableTravelers) {
-            if (traveler.telegramId === listing.buyerId) {
+            // Make sure telegramId exists
+            if (!traveler.telegramId || traveler.telegramId === listing.buyerId) {
                 continue;
             }
 
@@ -582,5 +650,78 @@ Are you interested in picking up this item?
             }
         }
     } catch (error) {
+        console.error("Error notifying travelers:", error);
+    }
+}
+
+async function handleTopup(bot: TelegramBot, msg: TelegramBot.Message): Promise<void> {
+    const chatId = msg.chat.id;
+    const userId = msg.from?.id;
+    const text = msg.text;
+
+    if (!userId || !text) return;
+
+    const userState = await getUserState(userId);
+
+    // Process topup regardless of state if currentStep is topup_amount
+    if (userState.state === ConversationState.TOPUP || userState.currentStep === 'topup_amount') {
+        const topupAmount = parseFloat(text);
+        
+        if (isNaN(topupAmount) || topupAmount <= 0) {
+            await bot.sendMessage(
+                chatId,
+                "Please enter a valid amount in dollars (e.g., 50.00).",
+                { reply_markup: { force_reply: true } }
+            );
+            return;
+        }
+        
+        try {
+            const user = await User.findOneAndUpdate(
+                { telegramId: userId },
+                { $inc: { walletBalance: topupAmount } },
+                { new: true }
+            );
+            
+            if (!user) {
+                // Create user if not exists
+                const newUser = new User({
+                    telegramId: userId,
+                    firstName: msg.from?.first_name || "User",
+                    lastName: msg.from?.last_name,
+                    username: msg.from?.username,
+                    walletBalance: topupAmount
+                });
+                await newUser.save();
+                
+                updateUserState(userId, {
+                    state: ConversationState.IDLE,
+                    currentStep: undefined
+                });
+                
+                await bot.sendMessage(
+                    chatId,
+                    `✅ Successfully added $${topupAmount} to your wallet. Your new balance is $${topupAmount}.`
+                );
+            } else {
+                updateUserState(userId, {
+                    state: ConversationState.IDLE,
+                    currentStep: undefined
+                });
+                
+                await bot.sendMessage(
+                    chatId,
+                    `✅ Successfully added $${topupAmount} to your wallet. Your new balance is $${user.walletBalance}.`
+                );
+            }
+        } catch (error) {
+            console.error("Error processing topup:", error);
+            await bot.sendMessage(
+                chatId,
+                "There was an error processing your payment. Please try again later."
+            );
+        }
+    } else {
+        await bot.sendMessage(chatId, "I'm not sure what you mean. Try using one of the commands like /newrequest or /available.");
     }
 }
