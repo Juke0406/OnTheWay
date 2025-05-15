@@ -120,3 +120,19 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Telegram Login Button Styles */
+.telegram-login-container {
+  min-height: 50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 1rem 0;
+  width: 100%;
+}
+
+.telegram-login-container iframe {
+  border: none;
+  margin: 0 auto;
+  display: block;
+}
