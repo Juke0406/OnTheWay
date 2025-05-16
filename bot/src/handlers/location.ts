@@ -55,6 +55,8 @@ export async function handleLocation(bot: TelegramBot, msg: TelegramBot.Message)
             break;
         case ConversationState.SETTING_AVAILABILITY:
             await requestLiveLocation(bot, chatId);
+            const updateuserState = await getUserState(userId);
+            console.log('🐙 User state after live:', JSON.stringify(updateuserState, null, 2));
             break;
         case ConversationState.VIEWING_LISTINGS:
             await handleViewListingsLocation(bot, msg);
@@ -198,7 +200,7 @@ async function handleViewListingsLocation(bot: TelegramBot, msg: TelegramBot.Mes
 
     if (!userId || !location) return;
 
-    updateUserState(userId, {
+    await updateUserState(userId, {
         state: ConversationState.IDLE,
         currentStep: undefined
     });

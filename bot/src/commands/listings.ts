@@ -51,7 +51,7 @@ export async function handleListings(bot: TelegramBot, msg: TelegramBot.Message)
         if (isAvailable && userLocation) {
             await showNearbyListings(bot, chatId, userId, userRadius, userLocation, false);
         } else {
-            updateUserState(userId, {
+            await updateUserState(userId, {
                 state: ConversationState.VIEWING_LISTINGS,
                 currentStep: 'share_location'
             });
@@ -87,6 +87,11 @@ export async function showNearbyListings(
     quietMode: boolean = false
 ): Promise<number[]> {
     try {
+        await updateUserState(userId, {
+            state: ConversationState.IDLE,
+            currentStep: undefined
+        });    
+
         const sentMessageIds: number[] = [];
 
         const userStateBefore = await getUserState(userId);

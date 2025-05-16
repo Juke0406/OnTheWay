@@ -23,6 +23,10 @@ if (!process.env.MONGODB_URI) {
     process.exit(1);
 }
 
+if (!process.env.GEMINI_API_KEY) {
+    console.warn("GEMINI_API_KEY not set. Natural language processing will not work.");
+}
+
 connectDB();
 
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, {
