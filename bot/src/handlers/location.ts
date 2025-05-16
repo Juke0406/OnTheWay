@@ -548,47 +548,52 @@ export function setupListingPolling(bot: TelegramBot): void {
       'availabilityData.location': { $exists: true },
       'availabilityData.radius': { $exists: true }
     });
-    
+
     for (const user of availableUsers) {
       if (!user.telegramId || !user.availabilityData?.location || !user.availabilityData?.radius) {
         continue;
       }
-      
+
       const userId = user.telegramId;
       const location = user.availabilityData.location;
       const radius = user.availabilityData.radius;
-      
+
       // Find new listings within radius
       const listings = await Listing.find({
         status: ListingStatus.OPEN,
         _id: { $nin: user.notifiedListingIds || [] }
       });
-      
+
       const nearbyListings = listings.filter(listing => {
         if (!listing.pickupLocation) return false;
-        
+
+        // If pickup location is "anywhere" (0,0 coordinates), always include it
+        if (listing.pickupLocation.latitude === 0 && listing.pickupLocation.longitude === 0) {
+          return true;
+        }
+
         const distance = calculateDistance(
           location.latitude,
           location.longitude,
           listing.pickupLocation.latitude,
           listing.pickupLocation.longitude
         );
-        
+
         return distance <= radius;
       });
-      
+
       if (nearbyListings.length > 0) {
         // Update user's notified listings
         const newNotifiedIds = [
           ...(user.notifiedListingIds || []),
           ...nearbyListings.map(l => l._id.toString())
         ];
-        
+
         await User.updateOne(
           { telegramId: userId },
           { $set: { notifiedListingIds: newNotifiedIds } }
         );
-        
+
         // Send notification for each new listing
         for (const listing of nearbyListings) {
           const distance = calculateDistance(
@@ -597,7 +602,7 @@ export function setupListingPolling(bot: TelegramBot): void {
             listing.pickupLocation!.latitude,
             listing.pickupLocation!.longitude
           );
-          
+
           const message = `
 📦 *New Delivery Request Nearby!*
 
@@ -608,7 +613,7 @@ Offered Fee: $${listing.maxFee}
 
 Are you interested in picking up this item?
           `;
-          
+
           await bot.sendMessage(userId, message, {
             parse_mode: 'Markdown',
             reply_markup: {

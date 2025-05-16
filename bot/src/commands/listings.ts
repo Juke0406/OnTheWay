@@ -90,7 +90,7 @@ export async function showNearbyListings(
         await updateUserState(userId, {
             state: ConversationState.IDLE,
             currentStep: undefined
-        });    
+        });
 
         const sentMessageIds: number[] = [];
 
@@ -112,6 +112,12 @@ export async function showNearbyListings(
         const listingsWithDistance = nearbyListings
             .filter(listing => listing.pickupLocation)
             .map(listing => {
+                // Check if pickup location is "anywhere" (0,0 coordinates)
+                if (listing.pickupLocation!.latitude === 0 && listing.pickupLocation!.longitude === 0) {
+                    // For "anywhere" pickup locations, set distance to 0 to always show them
+                    return { listing, distance: 0, isAnywhere: true };
+                }
+
                 const pickupDistance = calculateDistance(
                     userLocation.latitude,
                     userLocation.longitude,
@@ -119,7 +125,7 @@ export async function showNearbyListings(
                     listing.pickupLocation!.longitude
                 );
 
-                return { listing, distance: pickupDistance };
+                return { listing, distance: pickupDistance, isAnywhere: false };
             })
             .filter(item => item.distance <= radius)
             .sort((a, b) => a.distance - b.distance);
@@ -177,10 +183,20 @@ export async function showNearbyListings(
         });
 
         for (const { listing, distance } of limitedListings) {
-            const pickupAddress = await getAddressFromCoordinates(
-                listing.pickupLocation!.latitude,
-                listing.pickupLocation!.longitude
-            );
+            let pickupAddress;
+            let pickupMapUrl;
+
+            // Check if pickup location is "anywhere" (0,0 coordinates)
+            if (listing.pickupLocation!.latitude === 0 && listing.pickupLocation!.longitude === 0) {
+                pickupAddress = "*ANYWHERE*";
+                pickupMapUrl = ""; // No map URL for "anywhere"
+            } else {
+                pickupAddress = await getAddressFromCoordinates(
+                    listing.pickupLocation!.latitude,
+                    listing.pickupLocation!.longitude
+                );
+                pickupMapUrl = `https://www.google.com/maps?q=${listing.pickupLocation!.latitude},${listing.pickupLocation!.longitude}`;
+            }
 
             let destinationAddress = 'Unknown destination';
             if (listing.destinationLocation) {
@@ -190,11 +206,17 @@ export async function showNearbyListings(
                 );
             }
 
-            const pickupMapUrl = `https://www.google.com/maps?q=${listing.pickupLocation!.latitude},${listing.pickupLocation!.longitude}`;
-
             let destinationMapUrl = '';
             if (listing.destinationLocation) {
                 destinationMapUrl = `https://www.google.com/maps?q=${listing.destinationLocation.latitude},${listing.destinationLocation.longitude}`;
+            }
+
+            // Prepare distance text based on whether it's an "anywhere" pickup
+            let distanceText;
+            if (listing.pickupLocation!.latitude === 0 && listing.pickupLocation!.longitude === 0) {
+                distanceText = "*FLEXIBLE PICKUP*";
+            } else {
+                distanceText = `${distance.toFixed(1)} km away`;
             }
 
             const listingMessage = `
@@ -202,7 +224,7 @@ export async function showNearbyListings(
 Item: ${listing.itemDescription}
 Price: $${listing.itemPrice}
 Fee: $${listing.maxFee}
-Distance: ${distance.toFixed(1)} km away
+Distance: ${distanceText}
 
 📍 *Pickup:* ${pickupAddress}
 🏁 *Destination:* ${destinationAddress}
@@ -221,9 +243,12 @@ Distance: ${distance.toFixed(1)} km away
                 ]);
             }
 
-            inlineKeyboard.push([
-                { text: "🗺️ View Pickup Map", url: pickupMapUrl }
-            ]);
+            // Only add pickup map button if it's not "anywhere"
+            if (pickupMapUrl) {
+                inlineKeyboard.push([
+                    { text: "🗺️ View Pickup Map", url: pickupMapUrl }
+                ]);
+            }
 
             if (destinationMapUrl) {
                 inlineKeyboard.push([

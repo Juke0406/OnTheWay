@@ -1,12 +1,16 @@
 "use client";
 
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSession } from "@/lib/auth-client";
+import { ListingStatus } from "@/lib/listing-types";
 import { IListing } from "@/models/types";
+import { DollarSign, Package } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ListingCard } from "./listing-card";
+import { LocationDisplay } from "./location-display";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 
 export function DashboardContent() {
@@ -198,50 +202,76 @@ export function DashboardContent() {
       {/* Listing Details Dialog */}
       {selectedListing && (
         <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Listing Details</DialogTitle>
+          <DialogContent className="max-w-md">
+            <DialogHeader className="pb-2 border-b">
+              <DialogTitle className="flex items-center gap-2">
+                <div className="rounded-full bg-primary/10 p-1.5">
+                  <Package className="h-5 w-5 text-primary" />
+                </div>
+                <span>Listing Details</span>
+              </DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div>
-                <h3 className="font-medium">Item Description</h3>
-                <p>{selectedListing.itemDescription}</p>
+            <div className="space-y-6 py-4">
+              <div className="bg-muted/30 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-muted-foreground mb-1.5">
+                  Item Description
+                </h3>
+                <p className="text-base">{selectedListing.itemDescription}</p>
               </div>
+
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h3 className="font-medium">Item Price</h3>
-                  <p>${selectedListing.itemPrice}</p>
+                <div className="bg-muted/30 rounded-lg p-4 flex flex-col">
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">
+                    Item Price
+                  </h3>
+                  <div className="flex items-center gap-1.5">
+                    <DollarSign className="h-4 w-4 text-primary" />
+                    <p className="text-lg font-semibold">
+                      ${selectedListing.itemPrice}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-medium">Max Fee</h3>
-                  <p>${selectedListing.maxFee}</p>
+                <div className="bg-muted/30 rounded-lg p-4 flex flex-col">
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">
+                    Max Fee
+                  </h3>
+                  <div className="flex items-center gap-1.5">
+                    <DollarSign className="h-4 w-4 text-primary" />
+                    <p className="text-lg font-semibold">
+                      ${selectedListing.maxFee}
+                    </p>
+                  </div>
                 </div>
               </div>
-              <div>
-                <h3 className="font-medium">Pickup Location</h3>
-                <p>
-                  {selectedListing.pickupLocation
-                    ? typeof selectedListing.pickupLocation === "object" &&
-                      "address" in selectedListing.pickupLocation
-                      ? selectedListing.pickupLocation.address
-                      : "Location coordinates available"
-                    : "Not specified"}
-                </p>
+
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium">Locations</h3>
+                <div className="bg-muted/30 rounded-lg p-4">
+                  <LocationDisplay
+                    location={selectedListing.pickupLocation}
+                    type="pickup"
+                    className="mb-4"
+                  />
+                  <div className="border-t border-dashed border-muted my-3"></div>
+                  <LocationDisplay
+                    location={selectedListing.destinationLocation}
+                    type="destination"
+                  />
+                </div>
               </div>
-              <div>
-                <h3 className="font-medium">Destination Location</h3>
-                <p>
-                  {selectedListing.destinationLocation
-                    ? typeof selectedListing.destinationLocation === "object" &&
-                      "address" in selectedListing.destinationLocation
-                      ? selectedListing.destinationLocation.address
-                      : "Location coordinates available"
-                    : "Not specified"}
-                </p>
-              </div>
-              <div>
-                <h3 className="font-medium">Status</h3>
-                <p className="capitalize">{selectedListing.status}</p>
+
+              <div className="bg-muted/30 rounded-lg p-4 flex items-center justify-between">
+                <h3 className="text-sm font-medium">Status</h3>
+                <Badge
+                  variant={
+                    selectedListing.status === ListingStatus.OPEN
+                      ? "default"
+                      : "secondary"
+                  }
+                  className="capitalize"
+                >
+                  {selectedListing.status}
+                </Badge>
               </div>
             </div>
           </DialogContent>

@@ -56,8 +56,68 @@ export async function handleCallbackQuery(bot: TelegramBot, query: TelegramBot.C
         await handleBidResponse(bot, chatId, userId, data, query);
     } else if (data.startsWith('rate_')) {
         await handleRatingSubmission(bot, chatId, userId, data);
+    } else if (data === 'pickup_anywhere') {
+        await handlePickupAnywhere(bot, chatId, userId, query);
     }
 }
+async function handlePickupAnywhere(
+    bot: TelegramBot,
+    chatId: number,
+    userId: number,
+    query: TelegramBot.CallbackQuery
+): Promise<void> {
+    try {
+        const userState = await getUserState(userId);
+
+        if (userState.state !== ConversationState.CREATING_LISTING || userState.currentStep !== 'pickup_location') {
+            await bot.sendMessage(chatId, "Something went wrong. Please try again with /newrequest.");
+            return;
+        }
+
+        // Set pickup location as "anywhere" (0,0 coordinates)
+        const pickupLocationAnywhere = {
+            latitude: 0,
+            longitude: 0,
+        };
+
+        updateUserState(userId, {
+            listingData: {
+                ...(userState.listingData || { itemDescription: '', itemPrice: 0, maxFee: 0 }),
+                pickupLocation: pickupLocationAnywhere
+            },
+            pickupAddress: "Anywhere",
+            currentStep: 'destination_location'
+        });
+
+        // Delete the original message if possible
+        if (query.message) {
+            try {
+                await bot.deleteMessage(chatId, query.message.message_id);
+            } catch (error) {
+                // Ignore errors when trying to delete the message
+            }
+        }
+
+        await bot.sendMessage(
+            chatId,
+            `Great! Pickup location set to: *ANYWHERE* (flexible pickup)\n\nNow, where should the item be delivered to? Please share a location or type an address.`,
+            {
+                parse_mode: 'Markdown',
+                reply_markup: {
+                    keyboard: [[{ text: "📍 Share Location", request_location: true }]],
+                    resize_keyboard: true,
+                    one_time_keyboard: true
+                }
+            }
+        );
+    } catch (error) {
+        await bot.sendMessage(
+            chatId,
+            "There was an error processing your request. Please try again."
+        );
+    }
+}
+
 export async function handleAvailabilityResponse(
     bot: TelegramBot,
     chatId: number,
@@ -160,6 +220,12 @@ async function showNearbyListings(
         const listingsWithDistance = nearbyListings
             .filter(listing => listing.pickupLocation)
             .map(listing => {
+                // Check if pickup location is "anywhere" (0,0 coordinates)
+                if (listing.pickupLocation!.latitude === 0 && listing.pickupLocation!.longitude === 0) {
+                    // For "anywhere" pickup locations, set distance to 0 to always show them
+                    return { listing, distance: 0, isAnywhere: true };
+                }
+
                 const pickupDistance = calculateDistance(
                     userLocation.latitude,
                     userLocation.longitude,
@@ -167,7 +233,7 @@ async function showNearbyListings(
                     listing.pickupLocation!.longitude
                 );
 
-                return { listing, distance: pickupDistance };
+                return { listing, distance: pickupDistance, isAnywhere: false };
             })
             .filter(item => item.distance <= radius)
             .sort((a, b) => a.distance - b.distance)
@@ -187,10 +253,23 @@ async function showNearbyListings(
         );
 
         for (const { listing, distance } of listingsWithDistance) {
-            const pickupAddress = await getAddressFromCoordinates(
-                listing.pickupLocation!.latitude,
-                listing.pickupLocation!.longitude
-            );
+            let pickupAddress;
+            let pickupMapUrl;
+            let distanceText;
+
+            // Check if pickup location is "anywhere" (0,0 coordinates)
+            if (listing.pickupLocation!.latitude === 0 && listing.pickupLocation!.longitude === 0) {
+                pickupAddress = "*ANYWHERE*";
+                pickupMapUrl = ""; // No map URL for "anywhere"
+                distanceText = "*FLEXIBLE PICKUP*";
+            } else {
+                pickupAddress = await getAddressFromCoordinates(
+                    listing.pickupLocation!.latitude,
+                    listing.pickupLocation!.longitude
+                );
+                pickupMapUrl = `https://www.google.com/maps?q=${listing.pickupLocation!.latitude},${listing.pickupLocation!.longitude}`;
+                distanceText = `${distance.toFixed(1)} km from your location`;
+            }
 
             let destinationAddress = 'Unknown destination';
             if (listing.destinationLocation) {
@@ -200,8 +279,6 @@ async function showNearbyListings(
                 );
             }
 
-            const pickupMapUrl = `https://www.google.com/maps?q=${listing.pickupLocation!.latitude},${listing.pickupLocation!.longitude}`;
-
             let destinationMapUrl = '';
             if (listing.destinationLocation) {
                 destinationMapUrl = `https://www.google.com/maps?q=${listing.destinationLocation.latitude},${listing.destinationLocation.longitude}`;
@@ -210,7 +287,7 @@ async function showNearbyListings(
             const notificationMessage = `
 🔔 *Delivery Opportunity!*
 
-Someone needs an item ${distance.toFixed(1)} km from your location:
+Someone needs an item delivered from ${distanceText}:
 Item: ${listing.itemDescription}
 Price: $${listing.itemPrice}
 Offered Fee: $${listing.maxFee}
@@ -228,11 +305,15 @@ Are you interested in picking up this item?
                 ],
                 [
                     { text: "💰 Offer Bid", callback_data: `bid_counter_${listing._id}` }
-                ],
-                [
-                    { text: "🗺️ View Pickup Map", url: pickupMapUrl }
                 ]
             ];
+
+            // Only add pickup map button if it's not "anywhere"
+            if (pickupMapUrl) {
+                inlineKeyboard.push([
+                    { text: "🗺️ View Pickup Map", url: pickupMapUrl }
+                ]);
+            }
 
             if (destinationMapUrl) {
                 inlineKeyboard.push([
@@ -278,10 +359,15 @@ async function handleBidResponse(
             let destinationAddress = 'Unknown location';
 
             if (listing.pickupLocation) {
-                pickupAddress = await getAddressFromCoordinates(
-                    listing.pickupLocation.latitude,
-                    listing.pickupLocation.longitude
-                );
+                // Check if pickup location is "anywhere" (0,0 coordinates)
+                if (listing.pickupLocation.latitude === 0 && listing.pickupLocation.longitude === 0) {
+                    pickupAddress = "*ANYWHERE*";
+                } else {
+                    pickupAddress = await getAddressFromCoordinates(
+                        listing.pickupLocation.latitude,
+                        listing.pickupLocation.longitude
+                    );
+                }
             }
 
             if (listing.destinationLocation) {
@@ -621,7 +707,7 @@ async function handleRatingSubmission(
         await bot.sendMessage(
             chatId,
             `
-Thank you for your rating of ${rating}/5! 
+Thank you for your rating of ${rating}/5!
 
 Your feedback helps improve our community. The transaction is now complete.
 
