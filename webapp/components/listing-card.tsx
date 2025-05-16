@@ -1,6 +1,13 @@
 import { getCachedAddressFromCoordinates } from "@/lib/geocoding";
+import { cn } from "@/lib/utils";
 import { IListing } from "@/models/types";
-import { MapPin } from "lucide-react";
+import {
+  ArrowDown,
+  DollarSign,
+  MapPin,
+  Navigation,
+  Package,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
@@ -80,47 +87,75 @@ export function ListingCard({
   }, [listing.pickupLocation, listing.destinationLocation]);
 
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader>
-        <div className="flex justify-between items-start">
-          <CardTitle className="text-base font-medium line-clamp-2">
-            {listing.itemDescription}
-          </CardTitle>
-          <Badge variant={isOwner ? "default" : "secondary"}>
+    <Card className="h-full flex flex-col overflow-hidden group transition-all duration-200 hover:shadow-md border-muted/80 hover:border-primary/20">
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-start gap-2">
+          <div className="flex items-start gap-2">
+            <div className="rounded-full bg-primary/10 p-1.5 mt-0.5">
+              <Package className="h-4 w-4 text-primary" />
+            </div>
+            <CardTitle className="text-base font-medium line-clamp-2">
+              {listing.itemDescription}
+            </CardTitle>
+          </div>
+          <Badge
+            variant={isOwner ? "default" : "secondary"}
+            className={cn(
+              "transition-all duration-200",
+              isOwner
+                ? "bg-primary/90 group-hover:bg-primary"
+                : "bg-secondary/90 group-hover:bg-secondary"
+            )}
+          >
             {isOwner ? "Your Listing" : `$${listing.maxFee} Fee`}
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="flex-grow">
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Item Price:</span>
-            <span className="font-medium">${listing.itemPrice}</span>
+      <CardContent className="flex-grow space-y-4 pt-2">
+        <div className="flex items-center justify-between bg-muted/40 rounded-lg p-2.5">
+          <div className="flex items-center gap-2">
+            <DollarSign className="h-4 w-4 text-primary/80" />
+            <span className="text-sm font-medium">Item Price</span>
           </div>
+          <span className="text-sm font-semibold">${listing.itemPrice}</span>
+        </div>
 
-          <div className="flex items-start gap-2">
-            <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+        <div className="space-y-2">
+          <div className="flex items-start gap-2.5 group/location">
+            <div className="rounded-full bg-muted/60 p-1.5 mt-0.5 group-hover/location:bg-primary/10 transition-colors">
+              <MapPin className="h-4 w-4 text-muted-foreground group-hover/location:text-primary transition-colors" />
+            </div>
             <div className="flex flex-col">
-              <span className="text-xs text-muted-foreground">Pickup:</span>
-              <span className="line-clamp-1">{pickupLocation}</span>
+              <span className="text-xs font-medium text-muted-foreground">
+                Pickup Location
+              </span>
+              <span className="text-sm line-clamp-1">{pickupLocation}</span>
             </div>
           </div>
 
-          <div className="flex items-start gap-2">
-            <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+          <div className="flex justify-center my-1">
+            <ArrowDown className="h-4 w-4 text-muted-foreground" />
+          </div>
+
+          <div className="flex items-start gap-2.5 group/location">
+            <div className="rounded-full bg-muted/60 p-1.5 mt-0.5 group-hover/location:bg-primary/10 transition-colors">
+              <Navigation className="h-4 w-4 text-muted-foreground group-hover/location:text-primary transition-colors" />
+            </div>
             <div className="flex flex-col">
-              <span className="text-xs text-muted-foreground">
-                Destination:
+              <span className="text-xs font-medium text-muted-foreground">
+                Destination
               </span>
-              <span className="line-clamp-1">{destinationLocation}</span>
+              <span className="text-sm line-clamp-1">
+                {destinationLocation}
+              </span>
             </div>
           </div>
         </div>
       </CardContent>
-      <CardFooter>
+      <CardFooter className="pt-2">
         <Button
-          variant="outline"
-          className="w-full"
+          variant="default"
+          className="w-full group-hover:bg-primary transition-colors"
           onClick={() => onViewDetails && onViewDetails(listing)}
         >
           View Details
