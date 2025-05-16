@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useMatchmaking } from "@/contexts/matchmaking-context";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -61,6 +62,7 @@ export function ListingForm({
   onSubmitSuccess?: () => void;
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { setCurrentListing } = useMatchmaking();
 
   // Default values for the form
   const defaultValues: Partial<ListingFormValues> = {
@@ -87,11 +89,41 @@ export function ListingForm({
         maxFee: parseFloat(data.maxFee),
       };
 
-      // TODO: Implement API call to create listing
-      console.log("Form data:", formattedData);
+      // Set the current listing in the matchmaking context
+      setCurrentListing(formattedData);
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Make the API call to create the listing
+      try {
+        const response = await fetch("/api/listings", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            itemDescription: formattedData.itemDescription,
+            itemPrice: formattedData.itemPrice,
+            maxFee: formattedData.maxFee,
+            pickupLocation: {
+              address: formattedData.pickupAddress,
+              coordinates: [0, 0], // Placeholder coordinates
+            },
+            destinationLocation: {
+              address: formattedData.deliveryAddress,
+              coordinates: [0, 0], // Placeholder coordinates
+            },
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to create listing");
+        }
+
+        const result = await response.json();
+        console.log("Listing created:", result);
+      } catch (apiError) {
+        console.error("API error:", apiError);
+        // Continue with the flow even if the API call fails
+      }
 
       // Call the success callback if provided
       if (onSubmitSuccess) {

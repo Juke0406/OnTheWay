@@ -29,6 +29,7 @@ export function MatchmakingDrawer({
     isSearching,
     elapsedTime,
     foundUsers,
+    currentListing,
     startSearching,
     stopSearching,
     formatTime,
@@ -74,14 +75,55 @@ export function MatchmakingDrawer({
         </DrawerHeader>
 
         <div className="px-4 pb-4 flex flex-col items-center">
+          {/* Item information */}
+          {currentListing && (
+            <div className="w-full mb-6 p-4 border border-border rounded-lg">
+              <h3 className="text-lg font-semibold mb-2">Item Information</h3>
+              <div className="space-y-2">
+                <div>
+                  <div className="text-sm font-medium">Description</div>
+                  <div className="text-sm text-muted-foreground">
+                    {currentListing.itemDescription}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <div className="text-sm font-medium">Item Price</div>
+                    <div className="text-sm text-muted-foreground">
+                      ${currentListing.itemPrice.toFixed(2)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium">Max Fee</div>
+                    <div className="text-sm text-muted-foreground">
+                      ${currentListing.maxFee.toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm font-medium">Pickup Location</div>
+                  <div className="text-sm text-muted-foreground">
+                    {currentListing.pickupAddress}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm font-medium">Delivery Location</div>
+                  <div className="text-sm text-muted-foreground">
+                    {currentListing.deliveryAddress}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Timer with pulsing radar effect */}
           <div
             className="relative flex items-center justify-center my-6"
             style={{ width: "140px", height: "140px", margin: "0 auto" }}
           >
             <Earth
-              className="absolute text-muted-foreground/5 w-[50rem] h-[50rem]"
-              strokeWidth={1}
+              className="absolute text-muted-foreground/5 w-[80rem] h-[80rem]"
+              strokeWidth={0.5}
             />
             <div className="matchmaking-pulse-container">
               {[1, 2, 3].map((i) => (
@@ -165,7 +207,7 @@ export function MatchmakingDrawer({
           <Button
             variant="destructive"
             onClick={handleCancel}
-            className="w-full max-w-xs"
+            className="w-full"
           >
             Cancel Search
           </Button>

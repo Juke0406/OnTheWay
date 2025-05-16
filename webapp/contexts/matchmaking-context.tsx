@@ -25,14 +25,25 @@ interface AvailableUser {
   };
 }
 
+// Define the listing interface for matchmaking
+interface MatchmakingListing {
+  itemDescription: string;
+  itemPrice: number;
+  maxFee: number;
+  pickupAddress: string;
+  deliveryAddress: string;
+}
+
 interface MatchmakingContextType {
   isSearching: boolean;
   elapsedTime: number;
   foundUsers: AvailableUser[];
+  currentListing: MatchmakingListing | null;
   startSearching: () => void;
   stopSearching: () => void;
   formatTime: (seconds: number) => string;
   openMatchmakingDrawer: () => void;
+  setCurrentListing: (listing: MatchmakingListing) => void;
 }
 
 const MatchmakingContext = createContext<MatchmakingContextType | undefined>(
@@ -62,6 +73,8 @@ export function MatchmakingProvider({
   const [availableUsers, setAvailableUsers] = useState<AvailableUser[]>([]);
   const [toastId, setToastId] = useState<string | number | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [currentListing, setCurrentListing] =
+    useState<MatchmakingListing | null>(null);
 
   // Format time as MM:SS
   const formatTime = (seconds: number) => {
@@ -166,6 +179,12 @@ export function MatchmakingProvider({
                 Found {foundUsers.length} traveller
                 {foundUsers.length !== 1 ? "s" : ""}
               </div>
+              {currentListing && (
+                <div className="text-xs text-muted-foreground mt-1">
+                  For: {currentListing.itemDescription.substring(0, 20)}
+                  {currentListing.itemDescription.length > 20 ? "..." : ""}
+                </div>
+              )}
             </div>
           </div>
         ),
@@ -220,6 +239,7 @@ export function MatchmakingProvider({
     setIsSearching(false);
     setElapsedTime(0);
     setFoundUsers([]);
+    setCurrentListing(null);
     if (toastId) {
       toast.dismiss(toastId);
       setToastId(null);
@@ -236,10 +256,12 @@ export function MatchmakingProvider({
     isSearching,
     elapsedTime,
     foundUsers,
+    currentListing,
     startSearching,
     stopSearching,
     formatTime,
     openMatchmakingDrawer,
+    setCurrentListing,
   };
 
   return (
