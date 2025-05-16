@@ -10,7 +10,7 @@ import {
 } from "react";
 import { toast } from "sonner";
 
-// Define the user interface (similar to the map page)
+// Represents a user available for matchmaking, as returned by /api/users/available
 interface AvailableUser {
   userId: string;
   telegramId?: number;
@@ -21,17 +21,21 @@ interface AvailableUser {
       longitude: number;
     };
     isLiveLocation?: boolean;
-    radius?: number; // Radius in kilometers
+    radius?: number;
   };
 }
 
-// Define the listing interface for matchmaking
+/**
+ * Defines the listing interface for matchmaking, including geo-coordinates.
+ */
 interface MatchmakingListing {
   itemDescription: string;
   itemPrice: number;
   maxFee: number;
-  pickupAddress: string;
-  deliveryAddress: string;
+  pickupAddress: string; // For display
+  deliveryAddress: string; // For display
+  pickupCoordinates: { lat: number; lng: number };
+  deliveryCoordinates: { lat: number; lng: number };
 }
 
 interface MatchmakingContextType {

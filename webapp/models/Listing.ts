@@ -63,6 +63,16 @@ const ListingSchema: Schema = new Schema(
           ) {
             return true;
           }
+          // Flat format: address, latitude, longitude at top level
+          if (
+            v &&
+            typeof v === "object" &&
+            "address" in v &&
+            "latitude" in v &&
+            "longitude" in v
+          ) {
+            return true;
+          }
           return false;
         },
         message: "Invalid pickup location format",
@@ -88,6 +98,16 @@ const ListingSchema: Schema = new Schema(
             typeof v === "object" &&
             "address" in v &&
             "coordinates" in v
+          ) {
+            return true;
+          }
+          // Flat format: address, latitude, longitude at top level
+          if (
+            v &&
+            typeof v === "object" &&
+            "address" in v &&
+            "latitude" in v &&
+            "longitude" in v
           ) {
             return true;
           }
