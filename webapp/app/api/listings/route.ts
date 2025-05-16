@@ -14,8 +14,18 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Get telegramId from session
+    const telegramId = (session.user as any)?.telegramId;
+
+    if (!telegramId) {
+      return NextResponse.json(
+        { error: "Telegram ID not found in session" },
+        { status: 400 }
+      );
+    }
+
     const listings = await Listing.find({
-      buyerId: session.user.id,
+      buyerId: telegramId,
     });
 
     return NextResponse.json({ listings });
@@ -37,6 +47,16 @@ export async function POST(req: NextRequest) {
 
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Get telegramId from session
+    const telegramId = (session.user as any)?.telegramId;
+
+    if (!telegramId) {
+      return NextResponse.json(
+        { error: "Telegram ID not found in session" },
+        { status: 400 }
+      );
     }
 
     const body = await req.json();
@@ -63,16 +83,29 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Extract location data - now already in bot format
+    const formattedPickupLocation = {
+      latitude: pickupLocation.latitude || 0,
+      longitude: pickupLocation.longitude || 0,
+    };
+
+    const formattedDestinationLocation = {
+      latitude: destinationLocation.latitude || 0,
+      longitude: destinationLocation.longitude || 0,
+    };
+
     // Create a new listing
     const listing = await Listing.create({
       listingId: uuidv4(),
-      buyerId: session.user.id,
+      buyerId: telegramId, // Use telegramId instead of session.user.id
       itemDescription,
       itemPrice,
-      pickupLocation,
-      destinationLocation,
+      pickupLocation: formattedPickupLocation,
+      destinationLocation: formattedDestinationLocation,
       maxFee,
       status: ListingStatus.OPEN,
+      buyerConfirmed: false,
+      travelerConfirmed: false,
       deliveryConfirmed: false,
     });
 
