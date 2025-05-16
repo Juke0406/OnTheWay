@@ -25,6 +25,7 @@ I'm here to help you connect with travelers who can bring items to you or help y
 /status - Check your active listings and deliveries
 /wallet - View your wallet balance
 /topup - Add funds to your wallet
+/cancel - Cancel current operation and return to main menu
 
 Let's get started!
 `;

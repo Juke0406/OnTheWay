@@ -13,6 +13,7 @@ import { handleCallbackQuery } from './handlers/callbackQuery.js';
 import { handleText } from './handlers/text.js';
 import { handleListings } from './commands/listings.js';
 import { handleWallet } from './commands/wallet.js';
+import { handleCancel } from './commands/cancel.js';
 
 if (!process.env.TELEGRAM_BOT_TOKEN) {
     process.exit(1);
@@ -43,6 +44,7 @@ bot.onText(/\/listings/, (msg) => handleListings(bot, msg));
 bot.onText(/\/stopsharing/, (msg) => handleStopSharing(bot, msg));
 bot.onText(/\/topup/, (msg) => handleTopup(bot, msg));
 bot.onText(/\/wallet/, (msg) => handleWallet(bot, msg));
+bot.onText(/\/cancel/, (msg) => handleCancel(bot, msg));
 
 bot.on('location', (msg) => handleLocation(bot, msg));
 
