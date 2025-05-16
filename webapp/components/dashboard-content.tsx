@@ -7,6 +7,7 @@ import { IListing } from "@/models/types";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ListingCard } from "./listing-card";
+import { LocationDisplay } from "./location-display";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 
 export function DashboardContent() {
@@ -219,25 +220,13 @@ export function DashboardContent() {
               </div>
               <div>
                 <h3 className="font-medium">Pickup Location</h3>
-                <p>
-                  {selectedListing.pickupLocation
-                    ? typeof selectedListing.pickupLocation === "object" &&
-                      "address" in selectedListing.pickupLocation
-                      ? selectedListing.pickupLocation.address
-                      : "Location coordinates available"
-                    : "Not specified"}
-                </p>
+                <LocationDisplay location={selectedListing.pickupLocation} />
               </div>
               <div>
                 <h3 className="font-medium">Destination Location</h3>
-                <p>
-                  {selectedListing.destinationLocation
-                    ? typeof selectedListing.destinationLocation === "object" &&
-                      "address" in selectedListing.destinationLocation
-                      ? selectedListing.destinationLocation.address
-                      : "Location coordinates available"
-                    : "Not specified"}
-                </p>
+                <LocationDisplay
+                  location={selectedListing.destinationLocation}
+                />
               </div>
               <div>
                 <h3 className="font-medium">Status</h3>
