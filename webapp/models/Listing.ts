@@ -39,61 +39,39 @@ const ListingSchema: Schema = new Schema(
       min: 0,
     },
 
-    // Location fields - support both formats
+    // Location fields - using bot format only
     pickupLocation: {
       type: Schema.Types.Mixed,
-      // Support both bot format and web format
       validate: {
         validator: function (v: any) {
-          // Bot format
-          if (
+          return (
             v &&
             typeof v === "object" &&
             "latitude" in v &&
-            "longitude" in v
-          ) {
-            return true;
-          }
-          // Web format
-          if (
-            v &&
-            typeof v === "object" &&
-            "address" in v &&
-            "coordinates" in v
-          ) {
-            return true;
-          }
-          return false;
+            "longitude" in v &&
+            typeof v.latitude === "number" &&
+            typeof v.longitude === "number"
+          );
         },
-        message: "Invalid pickup location format",
+        message:
+          "Invalid pickup location format. Must include latitude and longitude as numbers.",
       },
     },
     destinationLocation: {
       type: Schema.Types.Mixed,
-      // Support both bot format and web format
       validate: {
         validator: function (v: any) {
-          // Bot format
-          if (
+          return (
             v &&
             typeof v === "object" &&
             "latitude" in v &&
-            "longitude" in v
-          ) {
-            return true;
-          }
-          // Web format
-          if (
-            v &&
-            typeof v === "object" &&
-            "address" in v &&
-            "coordinates" in v
-          ) {
-            return true;
-          }
-          return false;
+            "longitude" in v &&
+            typeof v.latitude === "number" &&
+            typeof v.longitude === "number"
+          );
         },
-        message: "Invalid destination location format",
+        message:
+          "Invalid destination location format. Must include latitude and longitude as numbers.",
       },
     },
 

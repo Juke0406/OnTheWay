@@ -155,15 +155,16 @@ export function ListingForm({
       // Set the current listing in the matchmaking context
       setCurrentListing(formattedData);
 
-      // Extract coordinates from address objects
-      const pickupCoordinates: [number, number] = [
-        pickupAddress.lng,
-        pickupAddress.lat,
-      ];
-      const deliveryCoordinates: [number, number] = [
-        deliveryAddress.lng,
-        deliveryAddress.lat,
-      ];
+      // Format locations to match the bot format
+      const pickupLocation = {
+        latitude: pickupAddress.lat,
+        longitude: pickupAddress.lng,
+      };
+
+      const destinationLocation = {
+        latitude: deliveryAddress.lat,
+        longitude: deliveryAddress.lng,
+      };
 
       // Make the API call to create the listing
       try {
@@ -177,12 +178,12 @@ export function ListingForm({
             itemPrice: formattedData.itemPrice,
             maxFee: formattedData.maxFee,
             pickupLocation: {
-              address: formattedData.pickupAddress,
-              coordinates: pickupCoordinates,
+              ...pickupLocation,
+              address: formattedData.pickupAddress, // Keep address for display purposes
             },
             destinationLocation: {
-              address: formattedData.deliveryAddress,
-              coordinates: deliveryCoordinates,
+              ...destinationLocation,
+              address: formattedData.deliveryAddress, // Keep address for display purposes
             },
           }),
         });

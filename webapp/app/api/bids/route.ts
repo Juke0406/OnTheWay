@@ -14,9 +14,19 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Get telegramId from session
+    const telegramId = (session.user as any)?.telegramId;
+
+    if (!telegramId) {
+      return NextResponse.json(
+        { error: "Telegram ID not found in session" },
+        { status: 400 }
+      );
+    }
+
     // Get bids where the user is the traveler
     const bids = await Bid.find({
-      travelerId: session.user.id,
+      travelerId: telegramId,
     });
 
     return NextResponse.json({ bids });
@@ -67,8 +77,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Get telegramId from session
+    const telegramId = (session.user as any)?.telegramId;
+
+    if (!telegramId) {
+      return NextResponse.json(
+        { error: "Telegram ID not found in session" },
+        { status: 400 }
+      );
+    }
+
     // Check if the user is not the buyer
-    if (listing.buyerId === session.user.id) {
+    if (listing.buyerId === telegramId) {
       return NextResponse.json(
         { error: "You cannot bid on your own listing" },
         { status: 400 }
@@ -78,7 +98,7 @@ export async function POST(req: NextRequest) {
     // Create a new bid
     const bid = await Bid.create({
       bidId: uuidv4(),
-      travelerId: session.user.id,
+      travelerId: telegramId,
       listingId: listing.listingId,
       proposedFee,
       status: BidStatus.PENDING,

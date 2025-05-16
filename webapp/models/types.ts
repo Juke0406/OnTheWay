@@ -32,14 +32,14 @@ export interface IUser extends Document {
   userId: string;
   email?: string;
   image?: string;
-  
+
   // Fields from bot model
   telegramId?: number;
   username?: string;
   name: string; // Web app uses name, bot uses firstName/lastName
   firstName?: string;
   lastName?: string;
-  
+
   // Bot state management fields
   state?: ConversationState;
   currentStep?: string;
@@ -47,16 +47,16 @@ export interface IUser extends Document {
   availabilityData?: IAvailabilityData;
   currentListingId?: string;
   otpCode?: string;
-  
+
   // Common fields
   walletBalance: number;
   rating: number;
-  
+
   // Additional bot fields
   pickupAddress?: string;
   destinationAddress?: string;
   notifiedListingIds?: string[];
-  
+
   // Timestamps
   createdAt: Date;
   updatedAt: Date;
@@ -73,19 +73,13 @@ export interface IListing extends Document {
   itemPrice: number;
   maxFee: number;
 
-  // Location fields - support both formats
-  pickupLocation?:
-    | ILocation
-    | {
-        address: string;
-        coordinates: [number, number]; // [longitude, latitude]
-      };
-  destinationLocation?:
-    | ILocation
-    | {
-        address: string;
-        coordinates: [number, number]; // [longitude, latitude]
-      };
+  // Location fields - using bot format
+  pickupLocation?: ILocation & {
+    address?: string; // Keep address for display purposes
+  };
+  destinationLocation?: ILocation & {
+    address?: string; // Keep address for display purposes
+  };
 
   // Common fields
   status: ListingStatus;
@@ -108,20 +102,20 @@ export interface IListing extends Document {
 export interface IBid extends Document {
   // Web app specific fields
   bidId?: string;
-  
+
   // Fields from bot model
   travelerId: string | number; // Support both string (web) and number (bot)
   listingId: string | Types.ObjectId; // Support both string (web) and ObjectId (bot)
   proposedFee: number;
   status: BidStatus;
-  
+
   // Web app specific fields
   timestamp?: Date;
-  
+
   // Timestamps
   createdAt: Date;
   updatedAt: Date;
-  
+
   // Bot specific field
   _id: Types.ObjectId;
 }
@@ -130,14 +124,14 @@ export interface IBid extends Document {
 export interface IReview extends Document {
   // Web app specific fields
   reviewId?: string;
-  
+
   // Fields from bot model
   fromUserId: string | number; // Support both string (web) and number (bot)
   toUserId: string | number; // Support both string (web) and number (bot)
   listingId: string | Types.ObjectId; // Support both string (web) and ObjectId (bot)
   rating: number;
   comment?: string;
-  
+
   // Timestamps
   createdAt: Date;
   updatedAt?: Date; // Bot model doesn't have updatedAt
