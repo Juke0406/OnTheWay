@@ -30,7 +30,7 @@ export default function LoginPage() {
       </div>
 
       <div className="flex items-center justify-center min-h-screen">
-        <Card className="w-full max-w-md border-none">
+        <Card className="w-full max-w-md border-none bg-transparent">
           <CardHeader>
             <CardTitle className="text-2xl text-center">On the Way</CardTitle>
             {/* <CardDescription className="text-center">

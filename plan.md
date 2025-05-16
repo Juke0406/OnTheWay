@@ -132,20 +132,20 @@ A platform that matches buyers and travelers in real-time using a web dashboard 
 
 ### 🔧 Backend
 
-- [ ] Set up MongoDB models (Users, Listings, Bids, Reviews)
-- [ ] User authentication (Telegram + JWT)
+- [x] Set up MongoDB models (Users, Listings, Bids, Reviews)
+- [x] User authentication (Telegram + JWT)
 - [ ] CRUD API for Listings and Bids
-- [ ] Mock escrow logic: deposit, lock, release
+- [x] Mock escrow logic: deposit, lock, release
 - [ ] OTP generation & verification logic
 - [ ] Matching engine (location + timing)
 - [ ] Review system implementation
 
 ### 🧠 Gemini Integration
 
-- [ ] Setup Gemini Pro API access
-- [ ] Natural language parser for listing creation
-- [ ] Missing info handler & follow-up question generator
-- [ ] Structure converter (text to listing JSON)
+- [x] Setup Gemini Pro API access
+- [x] Natural language parser for listing creation
+- [x] Missing info handler & follow-up question generator
+- [x] Structure converter (text to listing JSON)
 
 ### 🤖 Telegram Bot
 
@@ -162,30 +162,10 @@ A platform that matches buyers and travelers in real-time using a web dashboard 
 
 ### 🌐 Web App
 
-- [ ] Auth (Telegram login)
+- [x] Auth (Telegram login)
 - [ ] Dashboard with listing management
 - [ ] View and accept/reject bids
 - [ ] Submit new listings (fallback from bot)
 - [ ] Profile pages with review history
 - [ ] Wallet and escrow status views (mocked)
 - [ ] Admin panel (disputes, force release, user ban)
-
-### 📦 DevOps & Infra
-
-- [ ] CI/CD for Next.js frontend (Vercel)
-- [ ] API deployment with Fly.io or Railway
-- [ ] MongoDB Atlas integration
-- [ ] Telegram bot hosting on Render
-
----
-
-## Milestones
-
-| Phase   | Timeline  | Features                                          |
-| ------- | --------- | ------------------------------------------------- |
-| Phase 1 | Week 1–3  | Telegram bot MVP, Gemini parsing, listing flow    |
-| Phase 2 | Week 4–6  | Backend API, DB models, OTP + escrow logic (mock) |
-| Phase 3 | Week 7–8  | Web app dashboard, bid system, review flow        |
-| Phase 4 | Week 9–10 | Final integrations, QA, deployment                |
-
----

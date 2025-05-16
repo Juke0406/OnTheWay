@@ -32,7 +32,7 @@ import { MatchmakingProvider } from "@/contexts/matchmaking-context";
 import { signOut, useSession } from "@/lib/auth-client";
 import { micah } from "@dicebear/collection";
 import { createAvatar } from "@dicebear/core";
-import { ClipboardList, LogOut, Package, Plus } from "lucide-react";
+import { ClipboardList, LogOut, Navigation, Package, Plus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -163,7 +163,7 @@ export default function DashboardLayout({
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>List Something</DialogTitle>
+                  <DialogTitle>Request an Item</DialogTitle>
                   <DialogDescription>
                     Create a new listing for something you need delivered.
                   </DialogDescription>
@@ -193,13 +193,15 @@ export default function DashboardLayout({
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Deliver Things</DialogTitle>
+                  <DialogTitle>Earn & Deliver</DialogTitle>
                   <DialogDescription>
-                    Start delivering items to earn money.
+                    Start helping others deliver items they need & earn money on
+                    your way.
                   </DialogDescription>
                 </DialogHeader>
-                <div className="py-4">
-                  <p className="mb-4">
+                <div className="py-4 gap-4 flex flex-col items-center">
+                  <Navigation className="text-blue-400" size={50} />
+                  <p className="mb-4 text-muted-foreground text-center">
                     To start delivering, you need to share your live location
                     with our Telegram bot.
                   </p>
