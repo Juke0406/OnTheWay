@@ -8,6 +8,13 @@ export enum BidStatus {
   DECLINED = "declined",
 }
 
+// Define bid source enum to match the bot
+export enum BidSource {
+  PHONE = "phone",
+  WEBAPP = "webapp",
+  UNKNOWN = "unknown",
+}
+
 const BidSchema: Schema = new Schema(
   {
     // Web app specific fields
@@ -37,6 +44,12 @@ const BidSchema: Schema = new Schema(
       type: String,
       enum: Object.values(BidStatus),
       default: BidStatus.PENDING,
+    },
+
+    source: {
+      type: String,
+      enum: Object.values(BidSource),
+      default: BidSource.UNKNOWN,
     },
 
     // Web app specific fields
