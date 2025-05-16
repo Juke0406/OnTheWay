@@ -1,5 +1,6 @@
 "use client";
 
+import { DashboardContent } from "@/components/dashboard-content";
 import { ListingForm } from "@/components/listing-form";
 import { MatchmakingDrawer } from "@/components/matchmaking-drawer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -143,12 +144,8 @@ export default function DashboardLayout({
                   <DrawerTitle>Dashboard</DrawerTitle>
                 </DrawerHeader>
                 <div className="px-4 pb-4">
-                  {/* Dashboard content will be injected here */}
-                  <iframe
-                    src="/dashboard"
-                    className="w-full h-[70vh] border-none"
-                    title="Dashboard"
-                  />
+                  {/* Dashboard content directly included */}
+                  <DashboardContent />
                 </div>
               </DrawerContent>
             </Drawer>

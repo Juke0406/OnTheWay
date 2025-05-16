@@ -66,7 +66,7 @@ export function MatchmakingDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="mx-auto">
+      <DrawerContent>
         <DrawerHeader className="text-center">
           <DrawerTitle>Finding Travellers</DrawerTitle>
           <DrawerDescription>
