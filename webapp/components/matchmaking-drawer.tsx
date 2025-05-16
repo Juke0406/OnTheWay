@@ -224,10 +224,6 @@ export function MatchmakingDrawer({
 
           {/* Timer with pulsing radar effect */}
           <div className="relative flex items-center justify-center my-4 w-28 h-28 mx-auto">
-            <Earth
-              className="absolute text-muted-foreground/5 w-[50rem] h-[50rem]"
-              strokeWidth={0.4}
-            />
             <div className="matchmaking-pulse-container">
               {[1, 2, 3].map((i) => (
                 <div
