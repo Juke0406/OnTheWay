@@ -3,6 +3,7 @@ import { ConversationState, getUserState, updateUserState } from '../state.js';
 import Listing, { ListingStatus } from '../models/Listing.js';
 import Bid, { BidStatus } from '../models/Bid.js';
 import User from '../models/User.js';
+import { handleNaturalLanguage } from './nlp.js';
 
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
     const R = 6371;
@@ -27,6 +28,13 @@ export async function handleText(bot: TelegramBot, msg: TelegramBot.Message): Pr
 
     if (!userId || !text) return;
 
+    // First try to process as natural language
+    const handledByNlp = await handleNaturalLanguage(bot, msg);
+    if (handledByNlp) {
+        return; // If NLP handled it, we're done
+    }
+
+    // If not handled by NLP, continue with existing command flow
     const userState = await getUserState(userId);
 
     switch (userState.state) {

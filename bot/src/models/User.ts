@@ -38,6 +38,11 @@ export interface IUser extends Document {
     destinationAddress?: string;
     notifiedListingIds?: string[];
     nlpFlow?: boolean;
+    nlpData?: {
+        intent: string;
+        conversationHistory: string[];
+        collectedFields: Record<string, any>;
+    };
     email?: string;
     emailVerified: boolean;
     image?: string;
