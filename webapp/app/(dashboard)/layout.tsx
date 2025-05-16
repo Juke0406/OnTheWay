@@ -17,9 +17,9 @@ import {
 import {
   Drawer,
   DrawerContent,
-  DrawerTrigger,
   DrawerHeader,
   DrawerTitle,
+  DrawerTrigger,
 } from "@/components/ui/drawer";
 import {
   DropdownMenu,
@@ -41,6 +41,7 @@ import {
   Navigation,
   Package,
   Plus,
+  Send,
   Settings,
 } from "lucide-react";
 import Link from "next/link";
@@ -60,6 +61,10 @@ export default function DashboardLayout({
   const [deliverCredenzaOpen, setDeliverCredenzaOpen] = useState(false);
   const [matchmakingOpen, setMatchmakingOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // Get the bot name from environment variables
+  const telegramBotName =
+    process.env.NEXT_PUBLIC_TELEGRAM_BOT_NAME || "onthewayjwbot";
 
   // All hooks must be called before any conditional returns
   // State to track if the Telegram avatar is valid
@@ -214,6 +219,22 @@ export default function DashboardLayout({
                     Create a new listing for something you need delivered.
                   </CredenzaDescription>
                 </CredenzaHeader>
+                <div className="bg-muted/50 p-4 mb-4 rounded-lg">
+                  <p className="text-sm font-medium text-center mb-3">
+                    Want to request items like talking to a human? Use our
+                    Telegram bot!
+                  </p>
+                  <Button asChild className="w-full bg-primary">
+                    <Link
+                      href={`https://t.me/${telegramBotName}`}
+                      target="_blank"
+                      className="flex items-center justify-center gap-2"
+                    >
+                      <Send className="h-4 w-4" />
+                      Open Telegram Bot
+                    </Link>
+                  </Button>
+                </div>
                 <div className="py-4">
                   <ListingForm
                     onClose={() => setListCredenzaOpen(false)}
@@ -253,7 +274,7 @@ export default function DashboardLayout({
                   </p>
                   <Button asChild className="w-full">
                     <Link
-                      href="https://t.me/onthewaysupportbot"
+                      href={`https://t.me/${telegramBotName}`}
                       target="_blank"
                     >
                       Open Telegram Bot
