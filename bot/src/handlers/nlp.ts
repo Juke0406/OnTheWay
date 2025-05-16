@@ -1,12 +1,14 @@
 import TelegramBot from 'node-telegram-bot-api';
 import { ConversationState, getUserState, updateUserState, updateNlpConversation } from '../state.js';
-import { processNaturalLanguage } from '../gemini.js';
+import { processNaturalLanguage, type NLPResult } from '../gemini.js';
 import { handleNewRequest } from '../commands/newRequest.js';
 import { handleAvailable } from '../commands/available.js';
 import { handleListings } from '../commands/listings.js';
 import { handleWallet } from '../commands/wallet.js';
-import { handleTopup } from '../commands/accept.js';
+import { handleTopup } from '../handlers/text.js';
 import { handleStatus } from '../commands/status.js';
+import { handleAvailabilityResponse } from '../handlers/callbackQuery.js';
+
 
 export async function handleNaturalLanguage(
   bot: TelegramBot, 
@@ -32,13 +34,18 @@ export async function handleNaturalLanguage(
     
     // Access in-memory state directly from the userStates map
     const userStateInMemory = userState;
-    const nlpData = userStateInMemory.nlpData || { conversationHistory: [], collectedFields: {} };
+    const nlpData = userStateInMemory.nlpData || { conversationHistory: [], collectedFields: {}, missingFields: [] };
     
     // Process with Gemini
     const nlpResult = await processNaturalLanguage(
       text, 
       nlpData.conversationHistory
     );
+
+    const history = [
+      ...(userState.nlpData?.conversationHistory || []),
+      `User: ${text}`
+    ];
     
     // If we're continuing an NLP flow, use the existing intent
     const intent = userState.state === ConversationState.NLP_FLOW && 'intent' in nlpData
@@ -50,14 +57,18 @@ export async function handleNaturalLanguage(
       ...nlpData.collectedFields,
       ...nlpResult.fields
     };
+
+    console.log('🐙 NLP Result:', JSON.stringify(nlpResult, null, 2));
+
     
     // Update user state with NLP data
-    updateUserState(userId, {
+   await updateUserState(userId, {
       state: ConversationState.NLP_FLOW,
       nlpData: {
         intent,
-        conversationHistory: nlpData.conversationHistory,
-        collectedFields
+        conversationHistory: history,
+        collectedFields,
+        missingFields: nlpResult.missingFields
       }
     });
     
@@ -65,21 +76,25 @@ export async function handleNaturalLanguage(
     if (nlpResult.missingFields.length === 0) {
       // All fields collected, execute the command
       await executeIntent(bot, msg, intent, collectedFields);
-      
-      // Reset NLP flow
-      updateUserState(userId, {
-        state: ConversationState.IDLE,
-        nlpData: undefined
-      });
+      // Reset NLP flow for single step intents
+      if (intent === 'wallet' || intent === 'status' || intent === 'topup') {
+        await updateUserState(userId, {
+          state: ConversationState.IDLE,
+          nlpData: undefined
+        });
+      }
     } else {
       // Ask follow-up question for missing fields
       const response = nlpResult.followUpQuestion || 
         `Could you please provide the ${nlpResult.missingFields[0]}?`;
       
       await bot.sendMessage(chatId, response);
+
+      history.push(`Bot: ${response}`);
+
       
       // Add bot response to conversation history
-      updateNlpConversation(userId, response, false);
+      // updateNlpConversation(userId, response, false);
     }
     
     return true;
@@ -89,7 +104,7 @@ export async function handleNaturalLanguage(
   }
 }
 
-async function executeIntent(
+export async function executeIntent(
   bot: TelegramBot,
   msg: TelegramBot.Message,
   intent: string,
@@ -130,12 +145,18 @@ async function executeIntent(
         },
         nlpFlow: true
       });
-      
-      await handleAvailable(bot, msg);
+
+      if (typeof fields.isAvailable === 'boolean') {
+        const cbData = fields.isAvailable ? 'available_yes' : 'available_no';
+        await handleAvailabilityResponse(bot, msg.chat.id, msg.from!.id, cbData);
+      } else {
+        // otherwise ask them:
+        await handleAvailable(bot, msg);
+      }
       break;
       
     case 'listings':
-      updateUserState(userId, {
+      await updateUserState(userId, {
         state: ConversationState.VIEWING_LISTINGS,
         nlpFlow: true
       });
@@ -149,20 +170,20 @@ async function executeIntent(
       
     case 'topup':
       if (fields.amount) {
-        // If amount is provided, set it in state
-        const amount = parseFloat(fields.amount);
         
-        updateUserState(userId, {
+        await updateUserState(userId, {
           state: ConversationState.TOPUP,
           currentStep: 'topup_amount',
           nlpFlow: true
         });
+
+        // Sanitize the amount string
+        let amtStr = fields.amount.toString();
+        // remove any non-digits or dots:
+        amtStr = amtStr.replace(/[^0-9.]/g, '');
         
         // Create a fake message with the amount
-        const fakeMsg = {
-          ...msg,
-          text: amount.toString()
-        };
+        const fakeMsg = { ...msg, text: amtStr };
         
         await handleTopup(bot, fakeMsg as TelegramBot.Message);
       } else {

@@ -60,6 +60,7 @@ Analyze this message and return a JSON object with:
   "intent": "newrequest|available|listings|wallet|topup|status|unknown",
   "fields": {
     // All fields you can extract from the message
+    \"isAvailable\": true|false
   },
   "missingFields": [
     // List of required fields that are still missing

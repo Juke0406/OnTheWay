@@ -662,7 +662,7 @@ Are you interested in picking up this item?
     }
 }
 
-async function handleTopup(bot: TelegramBot, msg: TelegramBot.Message): Promise<void> {
+export async function handleTopup(bot: TelegramBot, msg: TelegramBot.Message): Promise<void> {
     const chatId = msg.chat.id;
     const userId = msg.from?.id;
     const text = msg.text;

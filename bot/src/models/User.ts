@@ -42,6 +42,7 @@ export interface IUser extends Document {
         intent: string;
         conversationHistory: string[];
         collectedFields: Record<string, any>;
+        missingFields: string[];
     };
     email?: string;
     emailVerified: boolean;

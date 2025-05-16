@@ -71,7 +71,7 @@ export async function handleTopup(
 
     try {
         // Always prompt for amount
-        updateUserState(userId, {
+        await updateUserState(userId, {
             state: ConversationState.TOPUP,
             currentStep: 'topup_amount'
         });
