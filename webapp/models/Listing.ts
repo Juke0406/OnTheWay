@@ -16,6 +16,7 @@ const ListingSchema: Schema = new Schema(
       type: String,
       required: true,
       unique: true,
+      default: () => new mongoose.Types.ObjectId().toHexString(),
     },
 
     // Fields from bot model

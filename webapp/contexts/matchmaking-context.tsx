@@ -1,3 +1,4 @@
+// webapp/contexts/matchmaking-context.tsx
 "use client";
 
 import { Earth } from "lucide-react";
@@ -7,14 +8,28 @@ import {
   useContext,
   useEffect,
   useState,
+  useRef,
+  useCallback,
 } from "react";
 import { toast } from "sonner";
+import {
+  IBid,
+  IListing,
+  IUser,
+  ListingStatus,
+  BidStatus,
+} from "../models/types";
+import { getDistanceInKm } from "../lib/geo-utils";
 
-// Represents a user available for matchmaking, as returned by /api/users/available
+// ... (keep existing interfaces: AvailableUser, MatchmakingListing)
+
 interface AvailableUser {
   userId: string;
   telegramId?: number;
   rating: number;
+  name?: string;
+  username?: string;
+  image?: string;
   availabilityData: {
     location: {
       latitude: number;
@@ -25,17 +40,25 @@ interface AvailableUser {
   };
 }
 
-/**
- * Defines the listing interface for matchmaking, including geo-coordinates.
- */
-interface MatchmakingListing {
+export interface MatchmakingListing {
+  // Export for use in ListingForm
+  listingId?: string;
   itemDescription: string;
   itemPrice: number;
   maxFee: number;
-  pickupAddress: string; // For display
-  deliveryAddress: string; // For display
+  pickupAddress: string;
+  deliveryAddress: string;
   pickupCoordinates: { lat: number; lng: number };
   deliveryCoordinates: { lat: number; lng: number };
+  status?: ListingStatus; // Add status
+  otpBuyer?: string;
+  otpTraveler?: string;
+}
+
+// Augment IBid to include traveler details for UI
+export interface PopulatedBid extends IBid {
+  // Export for use elsewhere if needed
+  travelerDetails?: Partial<IUser>;
 }
 
 interface MatchmakingContextType {
@@ -43,13 +66,23 @@ interface MatchmakingContextType {
   elapsedTime: number;
   foundUsers: AvailableUser[];
   currentListing: MatchmakingListing | null;
-  startSearching: () => void;
+  pendingBids: PopulatedBid[];
+  listingMatchDetails: {
+    listing?: IListing | MatchmakingListing; // Allow both types
+    acceptedBid?: PopulatedBid;
+    isMatch: boolean;
+  } | null;
+  startSearching: (listingDetails: MatchmakingListing) => void;
   stopSearching: () => void;
   formatTime: (seconds: number) => string;
   openMatchmakingDrawer: () => void;
-  setCurrentListing: (listing: MatchmakingListing) => void;
+  setCurrentListing: (listing: MatchmakingListing | null) => void;
+  acceptBid: (bidId: string) => Promise<void>;
+  declineBid: (bidId: string) => Promise<void>;
+  clearMatchDetails: () => void;
 }
 
+// ... (keep MatchmakingContext definition)
 const MatchmakingContext = createContext<MatchmakingContextType | undefined>(
   undefined
 );
@@ -77,10 +110,29 @@ export function MatchmakingProvider({
   const [availableUsers, setAvailableUsers] = useState<AvailableUser[]>([]);
   const [toastId, setToastId] = useState<string | number | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [currentListing, setCurrentListing] =
+  const [currentListing, setCurrentListingInternal] = // Renamed to avoid conflict
     useState<MatchmakingListing | null>(null);
 
-  // Format time as MM:SS
+  const [pendingBids, setPendingBids] = useState<PopulatedBid[]>([]);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [listingMatchDetails, setListingMatchDetails] = useState<{
+    listing?: IListing | MatchmakingListing;
+    acceptedBid?: PopulatedBid;
+    isMatch: boolean;
+  } | null>(null);
+
+  const setCurrentListing = useCallback(
+    (listing: MatchmakingListing | null) => {
+      setCurrentListingInternal(listing);
+      if (!listing) {
+        // If clearing listing, also clear match details
+        setListingMatchDetails(null);
+        setIsSearching(false); // Stop searching if listing is cleared
+      }
+    },
+    []
+  );
+
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
@@ -89,37 +141,137 @@ export function MatchmakingProvider({
       .padStart(2, "0")}`;
   };
 
-  // Timer effect
   useEffect(() => {
     let timer: NodeJS.Timeout;
-
     if (isSearching) {
       timer = setInterval(() => {
         setElapsedTime((prev) => prev + 1);
       }, 1000);
     }
-
     return () => {
       if (timer) clearInterval(timer);
     };
   }, [isSearching]);
 
-  // Fetch available users
-  useEffect(() => {
-    if (isSearching) {
-      fetchAvailableUsers();
+  const fetchBidsForCurrentListing = useCallback(async () => {
+    if (
+      !currentListing ||
+      !currentListing.listingId ||
+      listingMatchDetails?.isMatch
+    ) {
+      setPendingBids([]);
+      return;
     }
-  }, [isSearching]);
+    try {
+      const response = await fetch(
+        `/api/listings/${currentListing.listingId}/bids`
+      );
+      if (!response.ok) {
+        // console.warn("Failed to fetch bids:", response.statusText);
+        setPendingBids([]); // Clear bids on failure or if listing not found
+        return;
+      }
+      const data = await response.json();
 
-  // Simulate finding users over time
+      if (data.bids && Array.isArray(data.bids)) {
+        const newPendingBids = data.bids.filter(
+          (bid: IBid) => bid.status === BidStatus.PENDING
+        );
+
+        // Check if new bids are different from existing ones to prevent unnecessary re-renders
+        if (JSON.stringify(newPendingBids) !== JSON.stringify(pendingBids)) {
+          setPendingBids(newPendingBids);
+          if (
+            newPendingBids.length > pendingBids.length &&
+            newPendingBids.length > 0 &&
+            drawerOpen
+          ) {
+            toast.info(
+              `New bid(s) received for ${currentListing.itemDescription}!`
+            );
+          }
+        }
+      } else {
+        setPendingBids([]);
+      }
+    } catch (error) {
+      // console.warn("Error fetching bids:", error);
+      setPendingBids([]);
+    }
+  }, [currentListing, listingMatchDetails?.isMatch, drawerOpen]); // Removed pendingBids from dependencies
+
+  useEffect(() => {
+    if (
+      isSearching &&
+      currentListing &&
+      currentListing.listingId &&
+      !listingMatchDetails?.isMatch
+    ) {
+      fetchBidsForCurrentListing();
+      pollingIntervalRef.current = setInterval(
+        fetchBidsForCurrentListing,
+        1000
+      );
+    } else {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+      if (!listingMatchDetails?.isMatch) {
+        // Don't clear pending bids if it's a match
+        setPendingBids([]);
+      }
+    }
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, [
+    isSearching,
+    currentListing,
+    fetchBidsForCurrentListing,
+    listingMatchDetails?.isMatch,
+  ]);
+
+  useEffect(() => {
+    const fetchInitialAvailableUsers = async () => {
+      if (isSearching && currentListing) {
+        try {
+          const response = await fetch("/api/users/available");
+          const data = await response.json();
+          if (data.users) {
+            const { lat: pickupLat, lng: pickupLng } =
+              currentListing.pickupCoordinates;
+            const nearbyUsers = data.users.filter((user: AvailableUser) => {
+              if (!user.availabilityData?.location) return false;
+              const distance = getDistanceInKm(
+                pickupLat,
+                pickupLng,
+                user.availabilityData.location.latitude,
+                user.availabilityData.location.longitude
+              );
+              const userSearchRadius = user.availabilityData.radius || 50;
+              return distance <= userSearchRadius;
+            });
+            setAvailableUsers(nearbyUsers);
+          }
+        } catch (error) {
+          console.error("Error fetching available users:", error);
+        }
+      } else {
+        setAvailableUsers([]);
+      }
+    };
+    fetchInitialAvailableUsers();
+  }, [isSearching, currentListing]);
+
   useEffect(() => {
     if (isSearching && availableUsers.length > 0) {
       const interval = setInterval(() => {
-        // Randomly select a user that hasn't been found yet
         const remainingUsers = availableUsers.filter(
           (user) => !foundUsers.some((found) => found.userId === user.userId)
         );
-
         if (remainingUsers.length > 0) {
           const randomIndex = Math.floor(Math.random() * remainingUsers.length);
           const newUser = remainingUsers[randomIndex];
@@ -127,25 +279,19 @@ export function MatchmakingProvider({
         } else {
           clearInterval(interval);
         }
-      }, 3000); // Find a new user every 3 seconds
-
+      }, 5000 + Math.random() * 5000);
       return () => clearInterval(interval);
     }
   }, [isSearching, availableUsers, foundUsers]);
 
-  // Listen for drawer state changes from the MatchmakingDrawer component
   useEffect(() => {
     const handleDrawerStateChange = (event: CustomEvent) => {
       setDrawerOpen(event.detail.isOpen);
     };
-
-    // Add event listener
     window.addEventListener(
       "matchmaking-drawer-state-change",
       handleDrawerStateChange as EventListener
     );
-
-    // Cleanup
     return () => {
       window.removeEventListener(
         "matchmaking-drawer-state-change",
@@ -154,11 +300,8 @@ export function MatchmakingProvider({
     };
   }, []);
 
-  // Toast management
   useEffect(() => {
-    // Only create the toast when drawer is closed but searching is active
-    if (!drawerOpen && isSearching) {
-      // Create or update toast
+    if (!drawerOpen && isSearching && !listingMatchDetails?.isMatch) {
       const id = toast.custom(
         () => (
           <div
@@ -178,35 +321,31 @@ export function MatchmakingProvider({
               </div>
             </div>
             <div>
-              <div className="font-medium">Finding Travellers</div>
-              <div className="text-sm text-muted-foreground">
-                Found {foundUsers.length} traveller
-                {foundUsers.length !== 1 ? "s" : ""}
+              <div className="font-medium">
+                {pendingBids.length > 0
+                  ? `${pendingBids.length} New Bid(s)!`
+                  : "Finding Travellers"}
               </div>
-              {currentListing && (
-                <div className="text-xs text-muted-foreground mt-1">
-                  For: {currentListing.itemDescription.substring(0, 20)}
-                  {currentListing.itemDescription.length > 20 ? "..." : ""}
-                </div>
-              )}
+              <div className="text-sm text-muted-foreground">
+                {pendingBids.length > 0 && currentListing
+                  ? `For: ${currentListing.itemDescription.substring(0, 20)}...`
+                  : `Found ${foundUsers.length} traveller${
+                      foundUsers.length !== 1 ? "s" : ""
+                    }`}
+              </div>
             </div>
           </div>
         ),
         {
           id: "matchmaking-toast",
-          duration: Infinity, // Make it permanent
+          duration: Infinity,
         }
       );
-
       setToastId(id);
-    }
-    // Only dismiss the toast when the drawer is opened
-    else if (toastId && drawerOpen) {
+    } else if (toastId && (drawerOpen || listingMatchDetails?.isMatch)) {
       toast.dismiss(toastId);
       setToastId(null);
     }
-
-    // Cleanup on unmount
     return () => {
       if (toastId) {
         toast.dismiss(toastId);
@@ -217,43 +356,151 @@ export function MatchmakingProvider({
     isSearching,
     elapsedTime,
     foundUsers.length,
+    pendingBids.length,
     onOpenDrawer,
     toastId,
+    listingMatchDetails?.isMatch,
+    // Removed currentListing from dependencies and use specific properties instead
+    currentListing?.itemDescription,
   ]);
 
-  const fetchAvailableUsers = async () => {
-    try {
-      const response = await fetch("/api/users/available");
-      const data = await response.json();
-      if (data.users) {
-        setAvailableUsers(data.users);
-      }
-    } catch (error) {
-      console.error("Error fetching available users:", error);
+  const startSearching = (listingDetails: MatchmakingListing) => {
+    if (!listingDetails.listingId) {
+      console.error("Cannot start searching without a listingId.");
+      toast.error("Error: Listing details are incomplete for matchmaking.");
+      return;
     }
-  };
-
-  const startSearching = () => {
+    setCurrentListing(listingDetails); // Use the callback version
     setIsSearching(true);
     setElapsedTime(0);
     setFoundUsers([]);
+    setPendingBids([]);
+    setListingMatchDetails(null);
+    onOpenDrawer();
+    setDrawerOpen(true);
   };
 
   const stopSearching = () => {
     setIsSearching(false);
-    setElapsedTime(0);
-    setFoundUsers([]);
-    setCurrentListing(null);
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
     if (toastId) {
       toast.dismiss(toastId);
       setToastId(null);
     }
+    // Do not clear currentListing, pendingBids, or foundUsers here
+    // to allow viewing them if the drawer is simply closed then reopened.
+    // They will be cleared/reset when a new search starts or clearMatchDetails is called.
   };
 
   const openMatchmakingDrawer = () => {
-    // Just call the parent component's handler
-    // The drawer state will be updated via the event listener
     onOpenDrawer();
+    setDrawerOpen(true);
+  };
+
+  const acceptBid = async (bidId: string) => {
+    if (!currentListing || !currentListing.listingId) {
+      toast.error("No active listing to accept a bid for.");
+      return;
+    }
+    try {
+      const response = await fetch(`/api/bids/${bidId}/accept`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ listingId: currentListing.listingId }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to accept bid");
+      }
+      const result = await response.json();
+      toast.success(result.message || "Bid accepted successfully!");
+
+      const acceptedBidDetails = pendingBids.find(
+        (b) => (b.bidId || b._id.toString()) === bidId
+      );
+
+      const listingResponse = await fetch(
+        `/api/listings/${currentListing.listingId}`
+      );
+      if (listingResponse.ok) {
+        const updatedListingData = await listingResponse.json();
+        setListingMatchDetails({
+          listing: updatedListingData.listing as IListing,
+          acceptedBid: acceptedBidDetails,
+          isMatch: true,
+        });
+        setCurrentListing(updatedListingData.listing as MatchmakingListing); // Update currentListing with OTPs etc.
+      } else {
+        setListingMatchDetails({
+          listing: {
+            ...currentListing,
+            status: ListingStatus.MATCHED,
+            otpBuyer: result.otpBuyer,
+            otpTraveler: result.otpTraveler,
+          } as MatchmakingListing,
+          acceptedBid: acceptedBidDetails,
+          isMatch: true,
+        });
+        // Use the callback version to avoid stale closures
+        setCurrentListing({
+          ...currentListing,
+          status: ListingStatus.MATCHED,
+          otpBuyer: result.otpBuyer,
+          otpTraveler: result.otpTraveler,
+        });
+      }
+
+      setIsSearching(false);
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+      setPendingBids([]);
+    } catch (error) {
+      console.error("Error accepting bid:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Could not accept bid."
+      );
+    }
+  };
+
+  const declineBid = async (bidId: string) => {
+    try {
+      const response = await fetch(`/api/bids/${bidId}/decline`, {
+        method: "POST",
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to decline bid");
+      }
+      const result = await response.json();
+      toast.success(result.message || "Bid declined.");
+      setPendingBids((prevBids) =>
+        prevBids.filter((b) => (b.bidId || b._id.toString()) !== bidId)
+      );
+    } catch (error) {
+      console.error("Error declining bid:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Could not decline bid."
+      );
+    }
+  };
+
+  const clearMatchDetails = () => {
+    setListingMatchDetails(null);
+    setCurrentListing(null);
+    setIsSearching(false); // Ensure searching stops
+    setPendingBids([]);
+    setFoundUsers([]);
+    setElapsedTime(0);
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+    // onOpenChange(false); // This should be handled by the component using the drawer
   };
 
   const value = {
@@ -261,11 +508,16 @@ export function MatchmakingProvider({
     elapsedTime,
     foundUsers,
     currentListing,
+    pendingBids,
+    listingMatchDetails,
     startSearching,
     stopSearching,
     formatTime,
     openMatchmakingDrawer,
     setCurrentListing,
+    acceptBid,
+    declineBid,
+    clearMatchDetails,
   };
 
   return (
@@ -274,5 +526,3 @@ export function MatchmakingProvider({
     </MatchmakingContext.Provider>
   );
 }
-
-// We've moved the event dispatching directly into the MatchmakingDrawer component

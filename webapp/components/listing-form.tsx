@@ -12,17 +12,10 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useMatchmaking } from "../contexts/matchmaking-context";
-
-type MatchmakingListing = {
-  itemDescription: string;
-  itemPrice: number;
-  maxFee: number;
-  pickupAddress: string;
-  deliveryAddress: string;
-  pickupCoordinates: { lat: number; lng: number };
-  deliveryCoordinates: { lat: number; lng: number };
-};
+import {
+  useMatchmaking,
+  MatchmakingListing,
+} from "../contexts/matchmaking-context";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -73,7 +66,7 @@ export function ListingForm({
   onSubmitSuccess?: () => void;
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { setCurrentListing } = useMatchmaking();
+  const { startSearching } = useMatchmaking();
 
   // State for address autocomplete
   const [pickupAddress, setPickupAddress] = useState<AddressType>({
@@ -161,21 +154,6 @@ export function ListingForm({
         maxFee: parseFloat(data.maxFee),
       };
 
-      // Prepare data for MatchmakingContext, including coordinates
-      const matchmakingListingData: MatchmakingListing = {
-        itemDescription: formattedData.itemDescription,
-        itemPrice: formattedData.itemPrice,
-        maxFee: formattedData.maxFee,
-        pickupAddress: pickupAddress.formattedAddress,
-        deliveryAddress: deliveryAddress.formattedAddress,
-        pickupCoordinates: { lat: pickupAddress.lat, lng: pickupAddress.lng },
-        deliveryCoordinates: {
-          lat: deliveryAddress.lat,
-          lng: deliveryAddress.lng,
-        },
-      };
-      setCurrentListing(matchmakingListingData);
-
       // Make the API call to create the listing
       try {
         const response = await fetch("/api/listings", {
@@ -200,24 +178,73 @@ export function ListingForm({
           }),
         });
 
-        if (!response.ok) {
-          throw new Error("Failed to create listing");
-        }
-
         const result = await response.json();
-        console.log("Listing created:", result);
+
+        if (response.ok) {
+          // Show toast and refresh (if needed)
+          if (typeof window !== "undefined") {
+            const { toast } = await import("sonner");
+            toast.success(result.message || "Listing created successfully!");
+          }
+
+          // Map API response to MatchmakingListing and call startSearching
+          const newListing = result.listing;
+          if (
+            newListing &&
+            newListing.listingId &&
+            newListing.pickupLocation &&
+            newListing.destinationLocation
+          ) {
+            const matchmakingListingPayload: MatchmakingListing = {
+              listingId: newListing.listingId,
+              itemDescription: newListing.itemDescription,
+              itemPrice: newListing.itemPrice,
+              maxFee: newListing.maxFee,
+              pickupAddress:
+                newListing.pickupLocation.address ||
+                "Pickup Address Not Provided",
+              deliveryAddress:
+                newListing.destinationLocation.address ||
+                "Delivery Address Not Provided",
+              pickupCoordinates: {
+                lat: newListing.pickupLocation.latitude,
+                lng: newListing.pickupLocation.longitude,
+              },
+              deliveryCoordinates: {
+                lat: newListing.destinationLocation.latitude,
+                lng: newListing.destinationLocation.longitude,
+              },
+              status: newListing.status,
+            };
+            startSearching(matchmakingListingPayload);
+            if (onSubmitSuccess) {
+              onSubmitSuccess();
+            }
+          } else {
+            if (typeof window !== "undefined") {
+              const { toast } = await import("sonner");
+              toast.error(
+                "Failed to start matchmaking: incomplete listing details."
+              );
+            }
+            if (onSubmitSuccess) {
+              onSubmitSuccess();
+            }
+          }
+          onClose();
+        } else {
+          if (typeof window !== "undefined") {
+            const { toast } = await import("sonner");
+            toast.error(result.message || "Failed to create listing");
+          }
+        }
       } catch (apiError) {
         console.error("API error:", apiError);
-        // Continue with the flow even if the API call fails
+        if (typeof window !== "undefined") {
+          const { toast } = await import("sonner");
+          toast.error("Failed to create listing");
+        }
       }
-
-      // Call the success callback if provided
-      if (onSubmitSuccess) {
-        onSubmitSuccess();
-      }
-
-      // Close the dialog
-      onClose();
     } catch (error) {
       console.error("Error creating listing:", error);
     } finally {

@@ -1,7 +1,20 @@
 import { Document, Types } from "mongoose";
-import { BidStatus } from "./Bid";
-import { ListingStatus } from "./Listing";
 import { ConversationState } from "./User";
+
+// Define listing status enum to match the bot
+export enum ListingStatus {
+  OPEN = "open",
+  MATCHED = "matched",
+  COMPLETED = "completed",
+  CANCELLED = "cancelled",
+}
+
+// Define bid status enum to match the bot
+export enum BidStatus {
+  PENDING = "pending",
+  ACCEPTED = "accepted",
+  DECLINED = "declined",
+}
 
 // Location interface
 export interface ILocation {

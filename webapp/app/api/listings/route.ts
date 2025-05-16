@@ -96,7 +96,6 @@ export async function POST(req: NextRequest) {
 
     // Create a new listing
     const listing = await Listing.create({
-      listingId: uuidv4(),
       buyerId: telegramId, // Use telegramId instead of session.user.id
       itemDescription,
       itemPrice,

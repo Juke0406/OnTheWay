@@ -158,14 +158,18 @@ function AddressAutoCompleteInput(props: CommonProps) {
 
   const [isOpen, setIsOpen] = useState(false);
 
+  // Memoize these callbacks to prevent recreation on every render
   const open = useCallback(() => setIsOpen(true), []);
   const close = useCallback(() => setIsOpen(false), []);
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "Escape") {
-      close();
-    }
-  };
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLInputElement>) => {
+      if (event.key === "Escape") {
+        close();
+      }
+    },
+    [close]
+  );
 
   const debouncedSearchInput = useDebounce(searchInput, 500);
 
@@ -223,11 +227,14 @@ function AddressAutoCompleteInput(props: CommonProps) {
                         <CommandPrimitive.Item
                           value={prediction.placePrediction.text.text}
                           onSelect={() => {
-                            setSearchInput("");
-                            setSelectedPlaceId(
-                              prediction.placePrediction.place
-                            );
-                            setIsOpenDialog(true);
+                            // Use a single batch update to prevent multiple re-renders
+                            setTimeout(() => {
+                              setSearchInput("");
+                              setSelectedPlaceId(
+                                prediction.placePrediction.place
+                              );
+                              setIsOpenDialog(true);
+                            }, 0);
                           }}
                           className="flex select-text flex-col cursor-pointer gap-0.5 h-max p-2 px-3 rounded-md aria-selected:bg-accent aria-selected:text-accent-foreground hover:bg-accent hover:text-accent-foreground items-start"
                           key={prediction.placePrediction.placeId}
