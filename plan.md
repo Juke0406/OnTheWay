@@ -134,9 +134,9 @@ A platform that matches buyers and travelers in real-time using a web dashboard 
 
 - [x] Set up MongoDB models (Users, Listings, Bids, Reviews)
 - [x] User authentication (Telegram + JWT)
-- [ ] CRUD API for Listings and Bids
+- [~] CRUD API for Listings and Bids _(Create/Read mostly done; Update/Delete partially implemented or missing)_
 - [x] Mock escrow logic: deposit, lock, release
-- [ ] OTP generation & verification logic
+- [x] OTP generation & verification logic
 - [ ] Matching engine (location + timing)
 - [ ] Review system implementation
 
@@ -163,9 +163,9 @@ A platform that matches buyers and travelers in real-time using a web dashboard 
 ### 🌐 Web App
 
 - [x] Auth (Telegram login)
-- [ ] Dashboard with listing management
-- [ ] View and accept/reject bids
-- [ ] Submit new listings (fallback from bot)
+- [~] Dashboard with listing management _(View/Create listings done; Full management like edit, delete, bid handling from dashboard UI pending)_
+- [ ] View and accept/reject bids _(Backend API for accept exists; UI for viewing/managing bids per listing pending)_
+- [x] Submit new listings (fallback from bot)
 - [ ] Profile pages with review history
-- [ ] Wallet and escrow status views (mocked)
+- [x] Wallet and escrow status views (mocked) _(Wallet balance displayed; Listing statuses imply mock escrow state)_
 - [ ] Admin panel (disputes, force release, user ban)

@@ -44,8 +44,17 @@ export function DashboardContent() {
     try {
       setIsLoadingMyListings(true);
       const response = await fetch("/api/listings");
-      const data = await response.json();
+      const data = (await response.json()) as { listings: IListing[] };
       if (data.listings) {
+        console.log("My Listings Data:", data.listings);
+        const ids: string[] = data.listings.map((l: IListing) => l.listingId);
+        const uniqueIds = new Set(ids);
+        if (ids.length !== uniqueIds.size) {
+          console.warn("Duplicate listingIds found in myListings!", ids);
+        }
+        if (ids.some((id: string) => id === undefined || id === null)) {
+          console.warn("Missing listingIds found in myListings!", ids);
+        }
         setMyListings(data.listings);
       }
     } catch (error) {
@@ -59,8 +68,17 @@ export function DashboardContent() {
     try {
       setIsLoadingAllListings(true);
       const response = await fetch("/api/listings/all");
-      const data = await response.json();
+      const data = (await response.json()) as { listings: IListing[] };
       if (data.listings) {
+        console.log("All Listings Data:", data.listings);
+        const ids: string[] = data.listings.map((l: IListing) => l.listingId);
+        const uniqueIds = new Set(ids);
+        if (ids.length !== uniqueIds.size) {
+          console.warn("Duplicate listingIds found in allListings!", ids);
+        }
+        if (ids.some((id: string) => id === undefined || id === null)) {
+          console.warn("Missing listingIds found in allListings!", ids);
+        }
         setAllListings(data.listings);
       }
     } catch (error) {
@@ -131,9 +149,9 @@ export function DashboardContent() {
             </div>
           ) : myListings.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {myListings.map((listing) => (
+              {myListings.map((listing, index) => (
                 <ListingCard
-                  key={listing.listingId}
+                  key={listing.listingId ?? `myListing-${index}`}
                   listing={listing}
                   isOwner={true}
                   onViewDetails={handleViewDetails}
@@ -154,9 +172,9 @@ export function DashboardContent() {
             </div>
           ) : allListings.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {allListings.map((listing) => (
+              {allListings.map((listing, index) => (
                 <ListingCard
-                  key={listing.listingId}
+                  key={listing.listingId ?? `allListing-${index}`}
                   listing={listing}
                   isOwner={listing.buyerId === session.user.id}
                   onViewDetails={handleViewDetails}
