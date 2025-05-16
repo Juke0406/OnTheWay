@@ -34,7 +34,7 @@ export interface IListing extends Document {
 }
 
 const ListingSchema: Schema = new Schema({
-    listingId: { type: String, unique: true },
+    listingId: { type: String, unique: true, default: () => new mongoose.Types.ObjectId().toHexString()},
     buyerId: { type: Number, required: true, ref: 'User' },
     itemDescription: { type: String, required: true },
     itemPrice: { type: Number, required: true },

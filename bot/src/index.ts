@@ -8,7 +8,7 @@ import { handleNewRequest } from './commands/newRequest.js';
 import { handleAvailable } from './commands/available.js';
 import { handleAccept, handleTopup } from './commands/accept.js';
 import { handleStatus } from './commands/status.js';
-import { handleLocation, setupLiveLocationTracking, handleStopSharing, handleStopLiveLocation } from './handlers/location.js';
+import { handleLocation, setupLiveLocationTracking, handleStopSharing, handleStopLiveLocation, setupListingPolling } from './handlers/location.js';
 import { handleCallbackQuery } from './handlers/callbackQuery.js';
 import { handleText } from './handlers/text.js';
 import { handleListings } from './commands/listings.js';
@@ -23,6 +23,10 @@ if (!process.env.MONGODB_URI) {
     process.exit(1);
 }
 
+if (!process.env.GEMINI_API_KEY) {
+    console.warn("GEMINI_API_KEY not set. Natural language processing will not work.");
+}
+
 connectDB();
 
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, {
@@ -34,6 +38,7 @@ bot.setWebHook('', {
 });
 
 setupLiveLocationTracking(bot);
+setupListingPolling(bot);
 
 bot.onText(/\/start/, (msg) => handleStart(bot, msg));
 bot.onText(/\/newrequest/, (msg) => handleNewRequest(bot, msg));

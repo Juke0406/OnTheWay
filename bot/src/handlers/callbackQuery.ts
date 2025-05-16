@@ -58,8 +58,7 @@ export async function handleCallbackQuery(bot: TelegramBot, query: TelegramBot.C
         await handleRatingSubmission(bot, chatId, userId, data);
     }
 }
-
-async function handleAvailabilityResponse(
+export async function handleAvailabilityResponse(
     bot: TelegramBot,
     chatId: number,
     userId: number,

@@ -3,6 +3,8 @@ import { ConversationState, getUserState, updateUserState } from '../state.js';
 import { showNearbyListings } from '../commands/listings.js';
 import axios from 'axios';
 import { setTimeout } from 'timers';
+import Listing, { ListingStatus } from '../models/Listing.js';
+import User from '../models/User.js';
 
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
 
@@ -55,6 +57,8 @@ export async function handleLocation(bot: TelegramBot, msg: TelegramBot.Message)
             break;
         case ConversationState.SETTING_AVAILABILITY:
             await requestLiveLocation(bot, chatId);
+            const updateuserState = await getUserState(userId);
+            console.log('🐙 User state after live:', JSON.stringify(updateuserState, null, 2));
             break;
         case ConversationState.VIEWING_LISTINGS:
             await handleViewListingsLocation(bot, msg);
@@ -198,7 +202,7 @@ async function handleViewListingsLocation(bot: TelegramBot, msg: TelegramBot.Mes
 
     if (!userId || !location) return;
 
-    updateUserState(userId, {
+    await updateUserState(userId, {
         state: ConversationState.IDLE,
         currentStep: undefined
     });
@@ -534,4 +538,93 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 
 function deg2rad(deg: number): number {
     return deg * (Math.PI / 180);
+}
+
+export function setupListingPolling(bot: TelegramBot): void {
+  setInterval(async () => {
+    // Get all users who are available
+    const availableUsers = await User.find({
+      'availabilityData.isAvailable': true,
+      'availabilityData.location': { $exists: true },
+      'availabilityData.radius': { $exists: true }
+    });
+    
+    for (const user of availableUsers) {
+      if (!user.telegramId || !user.availabilityData?.location || !user.availabilityData?.radius) {
+        continue;
+      }
+      
+      const userId = user.telegramId;
+      const location = user.availabilityData.location;
+      const radius = user.availabilityData.radius;
+      
+      // Find new listings within radius
+      const listings = await Listing.find({
+        status: ListingStatus.OPEN,
+        _id: { $nin: user.notifiedListingIds || [] }
+      });
+      
+      const nearbyListings = listings.filter(listing => {
+        if (!listing.pickupLocation) return false;
+        
+        const distance = calculateDistance(
+          location.latitude,
+          location.longitude,
+          listing.pickupLocation.latitude,
+          listing.pickupLocation.longitude
+        );
+        
+        return distance <= radius;
+      });
+      
+      if (nearbyListings.length > 0) {
+        // Update user's notified listings
+        const newNotifiedIds = [
+          ...(user.notifiedListingIds || []),
+          ...nearbyListings.map(l => l._id.toString())
+        ];
+        
+        await User.updateOne(
+          { telegramId: userId },
+          { $set: { notifiedListingIds: newNotifiedIds } }
+        );
+        
+        // Send notification for each new listing
+        for (const listing of nearbyListings) {
+          const distance = calculateDistance(
+            location.latitude,
+            location.longitude,
+            listing.pickupLocation!.latitude,
+            listing.pickupLocation!.longitude
+          );
+          
+          const message = `
+📦 *New Delivery Request Nearby!*
+
+Someone needs an item ${distance.toFixed(1)} km from your location:
+Item: ${listing.itemDescription}
+Price: $${listing.itemPrice}
+Offered Fee: $${listing.maxFee}
+
+Are you interested in picking up this item?
+          `;
+          
+          await bot.sendMessage(userId, message, {
+            parse_mode: 'Markdown',
+            reply_markup: {
+              inline_keyboard: [
+                [
+                  { text: "✅ Accept", callback_data: `bid_accept_${listing._id}` },
+                  { text: "❌ Decline", callback_data: `bid_decline_${listing._id}` }
+                ],
+                [
+                  { text: "💰 Offer Bid", callback_data: `bid_counter_${listing._id}` }
+                ]
+              ]
+            }
+          });
+        }
+      }
+    }
+  }, 1000); // Poll every second
 }

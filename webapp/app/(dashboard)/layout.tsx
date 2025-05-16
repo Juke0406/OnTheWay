@@ -3,16 +3,17 @@
 import { DashboardContent } from "@/components/dashboard-content";
 import { ListingForm } from "@/components/listing-form";
 import { MatchmakingDrawer } from "@/components/matchmaking-drawer";
+import { SettingsModal } from "@/components/settings-modal";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  Credenza,
+  CredenzaContent,
+  CredenzaDescription,
+  CredenzaHeader,
+  CredenzaTitle,
+  CredenzaTrigger,
+} from "@/components/ui/credenza";
 import {
   Drawer,
   DrawerContent,
@@ -30,9 +31,18 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MatchmakingProvider } from "@/contexts/matchmaking-context";
 import { signOut, useSession } from "@/lib/auth-client";
+import { isValidImage } from "@/lib/image-utils";
+import { setupPlacesAutocompleteClickHandler } from "@/lib/prevent-dialog-close";
 import { micah } from "@dicebear/collection";
 import { createAvatar } from "@dicebear/core";
-import { Globe, LogOut, Navigation, Package, Plus } from "lucide-react";
+import {
+  Globe,
+  LogOut,
+  Navigation,
+  Package,
+  Plus,
+  Settings,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -46,11 +56,31 @@ export default function DashboardLayout({
   const { data: session, isPending } = useSession();
   const router = useRouter();
   const [dashboardOpen, setDashboardOpen] = useState(false);
-  const [listDialogOpen, setListDialogOpen] = useState(false);
-  const [deliverDialogOpen, setDeliverDialogOpen] = useState(false);
+  const [listCredenzaOpen, setListCredenzaOpen] = useState(false);
+  const [deliverCredenzaOpen, setDeliverCredenzaOpen] = useState(false);
   const [matchmakingOpen, setMatchmakingOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   // All hooks must be called before any conditional returns
+  // State to track if the Telegram avatar is valid
+  const [isTelegramAvatarValid, setIsTelegramAvatarValid] = useState<
+    boolean | null
+  >(null);
+
+  // Check if the Telegram avatar is valid when the session changes
+  useEffect(() => {
+    const checkTelegramAvatar = async () => {
+      if (session?.user?.image) {
+        const isValid = await isValidImage(session.user.image);
+        setIsTelegramAvatarValid(isValid);
+      } else {
+        setIsTelegramAvatarValid(false);
+      }
+    };
+
+    checkTelegramAvatar();
+  }, [session?.user?.image]);
+
   const userData = useMemo(() => {
     if (!session?.user) {
       return {
@@ -71,9 +101,15 @@ export default function DashboardLayout({
     const walletBalance = (session.user as any)?.walletBalance || 0;
     const rating = (session.user as any)?.rating || 0;
 
-    // Generate avatar using telegramId as seed
-    let avatarSvg = session.user.image || "";
-    if (telegramId) {
+    // Generate avatar using telegramId as seed for fallback
+    let avatarSvg = "";
+
+    // Use Telegram avatar if available and valid
+    if (session.user.image && isTelegramAvatarValid) {
+      avatarSvg = session.user.image;
+    }
+    // Otherwise generate avatar using telegramId as seed
+    else if (telegramId) {
       const avatar = createAvatar(micah, {
         seed: telegramId.toString(),
         size: 128,
@@ -92,13 +128,19 @@ export default function DashboardLayout({
       rating,
       avatarSvg,
     };
-  }, [session?.user]);
+  }, [session?.user, isTelegramAvatarValid]);
 
   useEffect(() => {
     if (!isPending && !session) {
       router.push("/login");
     }
   }, [session, isPending, router]);
+
+  // Set up the Places Autocomplete click handler to prevent dialog from closing
+  useEffect(() => {
+    const cleanup = setupPlacesAutocompleteClickHandler();
+    return cleanup;
+  }, []);
 
   if (isPending) {
     return (
@@ -152,8 +194,11 @@ export default function DashboardLayout({
             </Drawer>
 
             {/* List Something Button */}
-            <Dialog open={listDialogOpen} onOpenChange={setListDialogOpen}>
-              <DialogTrigger asChild>
+            <Credenza
+              open={listCredenzaOpen}
+              onOpenChange={setListCredenzaOpen}
+            >
+              <CredenzaTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -161,29 +206,29 @@ export default function DashboardLayout({
                 >
                   <Plus className="h-6 w-6" />
                 </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Request an Item</DialogTitle>
-                  <DialogDescription>
+              </CredenzaTrigger>
+              <CredenzaContent>
+                <CredenzaHeader>
+                  <CredenzaTitle>Request an Item</CredenzaTitle>
+                  <CredenzaDescription>
                     Create a new listing for something you need delivered.
-                  </DialogDescription>
-                </DialogHeader>
+                  </CredenzaDescription>
+                </CredenzaHeader>
                 <div className="py-4">
                   <ListingForm
-                    onClose={() => setListDialogOpen(false)}
+                    onClose={() => setListCredenzaOpen(false)}
                     onSubmitSuccess={() => setMatchmakingOpen(true)}
                   />
                 </div>
-              </DialogContent>
-            </Dialog>
+              </CredenzaContent>
+            </Credenza>
 
             {/* Deliver Things Button */}
-            <Dialog
-              open={deliverDialogOpen}
-              onOpenChange={setDeliverDialogOpen}
+            <Credenza
+              open={deliverCredenzaOpen}
+              onOpenChange={setDeliverCredenzaOpen}
             >
-              <DialogTrigger asChild>
+              <CredenzaTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -191,15 +236,15 @@ export default function DashboardLayout({
                 >
                   <Package className="h-6 w-6" />
                 </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Earn & Deliver</DialogTitle>
-                  <DialogDescription>
+              </CredenzaTrigger>
+              <CredenzaContent>
+                <CredenzaHeader>
+                  <CredenzaTitle>Earn & Deliver</CredenzaTitle>
+                  <CredenzaDescription>
                     Start helping others deliver items they need & earn money on
                     your way.
-                  </DialogDescription>
-                </DialogHeader>
+                  </CredenzaDescription>
+                </CredenzaHeader>
                 <div className="py-4 gap-4 flex flex-col items-center">
                   <Navigation className="text-blue-400" size={50} />
                   <p className="mb-4 text-muted-foreground text-center">
@@ -215,8 +260,8 @@ export default function DashboardLayout({
                     </Link>
                   </Button>
                 </div>
-              </DialogContent>
-            </Dialog>
+              </CredenzaContent>
+            </Credenza>
 
             {/* Matchmaking Drawer */}
             <MatchmakingDrawer
@@ -271,12 +316,30 @@ export default function DashboardLayout({
                   </div>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <button
+                    className="flex w-full items-center"
+                    onClick={() => setSettingsOpen(true)}
+                  >
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </button>
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Sign out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            {/* Settings Modal */}
+            <SettingsModal
+              open={settingsOpen}
+              onOpenChange={setSettingsOpen}
+              walletBalance={userData.walletBalance}
+            >
+              <span></span>
+            </SettingsModal>
           </div>
         </div>
       </div>

@@ -138,6 +138,7 @@ const ListingSchema: Schema = new Schema(
 );
 
 // Create the model only if it doesn't exist or we're not in a server context
+// Note: The bot doesn't specify a collection name, so we use the default 'listings'
 const Listing =
   mongoose.models.Listing || mongoose.model<IListing>("Listing", ListingSchema);
 
