@@ -3,6 +3,7 @@
 import { DashboardContent } from "@/components/dashboard-content";
 import { ListingForm } from "@/components/listing-form";
 import { MatchmakingDrawer } from "@/components/matchmaking-drawer";
+import { SettingsModal } from "@/components/settings-modal";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,7 +29,14 @@ import { isValidImage } from "@/lib/image-utils";
 import { setupPlacesAutocompleteClickHandler } from "@/lib/prevent-dialog-close";
 import { micah } from "@dicebear/collection";
 import { createAvatar } from "@dicebear/core";
-import { Globe, LogOut, Navigation, Package, Plus } from "lucide-react";
+import {
+  Globe,
+  LogOut,
+  Navigation,
+  Package,
+  Plus,
+  Settings,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -45,6 +53,7 @@ export default function DashboardLayout({
   const [listCredenzaOpen, setListCredenzaOpen] = useState(false);
   const [deliverCredenzaOpen, setDeliverCredenzaOpen] = useState(false);
   const [matchmakingOpen, setMatchmakingOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   // All hooks must be called before any conditional returns
   // State to track if the Telegram avatar is valid
@@ -298,12 +307,30 @@ export default function DashboardLayout({
                   </div>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <button
+                    className="flex w-full items-center"
+                    onClick={() => setSettingsOpen(true)}
+                  >
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </button>
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Sign out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            {/* Settings Modal */}
+            <SettingsModal
+              open={settingsOpen}
+              onOpenChange={setSettingsOpen}
+              walletBalance={userData.walletBalance}
+            >
+              <span></span>
+            </SettingsModal>
           </div>
         </div>
       </div>
