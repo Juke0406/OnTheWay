@@ -163,9 +163,7 @@ A platform that matches buyers and travelers in real-time using a web dashboard 
 ### 🌐 Web App
 
 - [x] Auth (Telegram login)
-- [ ] Dashboard with listing management
-- [ ] View and accept/reject bids
-- [ ] Submit new listings (fallback from bot)
-- [ ] Profile pages with review history
-- [ ] Wallet and escrow status views (mocked)
+- [x] Dashboard with listing management
+- [x] Submit new listings (fallback from bot)
+- [x] Wallet and escrow status views (mocked)
 - [ ] Admin panel (disputes, force release, user ban)
