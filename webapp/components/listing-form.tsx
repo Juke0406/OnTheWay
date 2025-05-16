@@ -17,6 +17,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import AddressAutoComplete, { AddressType } from "./address-autocomplete";
 import { DialogFooter } from "./ui/dialog";
 
 const listingFormSchema = z.object({
@@ -64,6 +65,34 @@ export function ListingForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { setCurrentListing } = useMatchmaking();
 
+  // State for address autocomplete
+  const [pickupAddress, setPickupAddress] = useState<AddressType>({
+    address1: "",
+    address2: "",
+    formattedAddress: "",
+    city: "",
+    region: "",
+    postalCode: "",
+    country: "",
+    lat: 0,
+    lng: 0,
+  });
+
+  const [deliveryAddress, setDeliveryAddress] = useState<AddressType>({
+    address1: "",
+    address2: "",
+    formattedAddress: "",
+    city: "",
+    region: "",
+    postalCode: "",
+    country: "",
+    lat: 0,
+    lng: 0,
+  });
+
+  const [pickupSearchInput, setPickupSearchInput] = useState("");
+  const [deliverySearchInput, setDeliverySearchInput] = useState("");
+
   // Default values for the form
   const defaultValues: Partial<ListingFormValues> = {
     itemDescription: "",
@@ -77,6 +106,40 @@ export function ListingForm({
     resolver: zodResolver(listingFormSchema),
     defaultValues,
   });
+
+  // Handle pickup address change
+  const handlePickupAddressChange = (address: AddressType) => {
+    setPickupAddress(address);
+
+    // Update the form value with the formatted address
+    if (address.formattedAddress) {
+      form.setValue("pickupAddress", address.formattedAddress, {
+        shouldValidate: true,
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+
+      console.log("Pickup place selected:", address.formattedAddress);
+      console.log("Pickup coordinates:", [address.lng, address.lat]);
+    }
+  };
+
+  // Handle delivery address change
+  const handleDeliveryAddressChange = (address: AddressType) => {
+    setDeliveryAddress(address);
+
+    // Update the form value with the formatted address
+    if (address.formattedAddress) {
+      form.setValue("deliveryAddress", address.formattedAddress, {
+        shouldValidate: true,
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+
+      console.log("Delivery place selected:", address.formattedAddress);
+      console.log("Delivery coordinates:", [address.lng, address.lat]);
+    }
+  };
 
   async function onSubmit(data: ListingFormValues) {
     setIsSubmitting(true);
@@ -92,6 +155,16 @@ export function ListingForm({
       // Set the current listing in the matchmaking context
       setCurrentListing(formattedData);
 
+      // Extract coordinates from address objects
+      const pickupCoordinates: [number, number] = [
+        pickupAddress.lng,
+        pickupAddress.lat,
+      ];
+      const deliveryCoordinates: [number, number] = [
+        deliveryAddress.lng,
+        deliveryAddress.lat,
+      ];
+
       // Make the API call to create the listing
       try {
         const response = await fetch("/api/listings", {
@@ -105,11 +178,11 @@ export function ListingForm({
             maxFee: formattedData.maxFee,
             pickupLocation: {
               address: formattedData.pickupAddress,
-              coordinates: [0, 0], // Placeholder coordinates
+              coordinates: pickupCoordinates,
             },
             destinationLocation: {
               address: formattedData.deliveryAddress,
-              coordinates: [0, 0], // Placeholder coordinates
+              coordinates: deliveryCoordinates,
             },
           }),
         });
@@ -215,9 +288,13 @@ export function ListingForm({
             <FormItem>
               <FormLabel>Pickup Address</FormLabel>
               <FormControl>
-                <Input
+                <AddressAutoComplete
+                  address={pickupAddress}
+                  setAddress={handlePickupAddressChange}
+                  searchInput={pickupSearchInput}
+                  setSearchInput={setPickupSearchInput}
+                  dialogTitle="Edit Pickup Address"
                   placeholder="Where the item should be picked up"
-                  {...field}
                 />
               </FormControl>
               <FormMessage />
@@ -232,9 +309,13 @@ export function ListingForm({
             <FormItem>
               <FormLabel>Delivery Address</FormLabel>
               <FormControl>
-                <Input
+                <AddressAutoComplete
+                  address={deliveryAddress}
+                  setAddress={handleDeliveryAddressChange}
+                  searchInput={deliverySearchInput}
+                  setSearchInput={setDeliverySearchInput}
+                  dialogTitle="Edit Delivery Address"
                   placeholder="Where the item should be delivered"
-                  {...field}
                 />
               </FormControl>
               <FormMessage />

@@ -60,11 +60,11 @@ export default function LoginPage() {
           <CardFooter className="flex flex-col gap-4 items-center text-center">
             <p className="text-sm text-muted-foreground">
               By signing in, you agree to our <br />
-              <a href="#" className="underline">
+              <a href="#" className="underline text-muted-foreground">
                 Terms of Service
               </a>{" "}
               and{" "}
-              <a href="#" className="underline">
+              <a href="#" className="underline text-muted-foreground">
                 Privacy Policy
               </a>
             </p>
