@@ -186,11 +186,26 @@ export const telegramPlugin = ({ botToken }: { botToken: string }) => {
           }
 
           try {
+            // Check if the User model is properly initialized
+            console.log(`User model collection name: ${User.collection.name}`);
+
             // Check if the user exists in our Mongoose model (for backward compatibility with existing users)
             // We only update existing users here, but don't create new ones directly in the User model
+            // Log the telegramId we're searching for
+            const telegramIdInt = parseInt(telegramUserId);
+            console.log(
+              `Searching for user with telegramId: ${telegramIdInt} (type: ${typeof telegramIdInt})`
+            );
+
             let dbUser = await User.findOne({
-              telegramId: parseInt(telegramUserId),
+              telegramId: telegramIdInt,
             });
+
+            console.log(
+              dbUser
+                ? `User found in DB with telegramId: ${telegramUserId}`
+                : `User not found in DB with telegramId: ${telegramUserId}`
+            );
 
             if (dbUser) {
               // Update the user's information if they exist
@@ -216,6 +231,9 @@ export const telegramPlugin = ({ botToken }: { botToken: string }) => {
             }
 
             // Step 1: Check for an existing account in Better Auth
+            console.log(
+              `Checking for existing account with telegramId: ${telegramUserId} in Better Auth`
+            );
             const existingAccount = (await adapter.findOne({
               model: "account",
               where: [
@@ -224,6 +242,27 @@ export const telegramPlugin = ({ botToken }: { botToken: string }) => {
               ],
               select: ["userId"],
             })) as { userId: string } | null;
+
+            console.log(
+              `Better Auth account lookup result: ${
+                existingAccount
+                  ? `Found (userId: ${existingAccount.userId})`
+                  : "Not found"
+              }`
+            );
+
+            // Also check if the user exists directly in the Better Auth user model
+            const existingUser = (await adapter.findOne({
+              model: "user",
+              where: [{ field: "telegramId", value: parseInt(telegramUserId) }],
+              select: ["id", "name", "email"],
+            })) as { id: string; name?: string; email?: string } | null;
+
+            console.log(
+              `Better Auth user lookup result: ${
+                existingUser ? `Found (id: ${existingUser.id})` : "Not found"
+              }`
+            );
 
             let userId: string;
             let userJustCreated = false;
