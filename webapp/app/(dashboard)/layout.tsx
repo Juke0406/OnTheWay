@@ -13,13 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
+import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,7 +26,7 @@ import { MatchmakingProvider } from "@/contexts/matchmaking-context";
 import { signOut, useSession } from "@/lib/auth-client";
 import { micah } from "@dicebear/collection";
 import { createAvatar } from "@dicebear/core";
-import { ClipboardList, LogOut, Navigation, Package, Plus } from "lucide-react";
+import { Globe, LogOut, Navigation, Package, Plus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -136,14 +130,12 @@ export default function DashboardLayout({
                   size="icon"
                   className="rounded-full h-12 w-12 flex items-center justify-center"
                 >
-                  <ClipboardList className="h-6 w-6" />
+                  <Globe className="h-6 w-6" />
                 </Button>
               </DrawerTrigger>
               <DrawerContent>
-                <DrawerHeader>
-                  <DrawerTitle>Dashboard</DrawerTitle>
-                </DrawerHeader>
-                <div className="px-4 pb-4">
+                <div className="px-4 py-4">
+                  <h2 className="text-xl font-semibold mb-4">Dashboard</h2>
                   {/* Dashboard content directly included */}
                   <DashboardContent />
                 </div>

@@ -1,14 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSession } from "@/lib/auth-client";
 import { IListing } from "@/models/types";
@@ -133,86 +125,55 @@ export function DashboardContent() {
         </TabsList>
 
         <TabsContent value="listings">
-          <Card>
-            <CardHeader>
-              <CardTitle>My Listings</CardTitle>
-              <CardDescription>
-                View and manage your current listings
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoadingMyListings ? (
-                <div className="flex justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-                </div>
-              ) : myListings.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {myListings.map((listing) => (
-                    <ListingCard
-                      key={listing.listingId}
-                      listing={listing}
-                      isOwner={true}
-                      onViewDetails={handleViewDetails}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  You don't have any listings yet.
-                </div>
-              )}
-            </CardContent>
-            <CardFooter>
-              <Button className="w-full">Create New Listing</Button>
-            </CardFooter>
-          </Card>
+          {isLoadingMyListings ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+            </div>
+          ) : myListings.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {myListings.map((listing) => (
+                <ListingCard
+                  key={listing.listingId}
+                  listing={listing}
+                  isOwner={true}
+                  onViewDetails={handleViewDetails}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              You don't have any listings yet.
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="all-listings">
-          <Card>
-            <CardHeader>
-              <CardTitle>All Listings</CardTitle>
-              <CardDescription>Browse all available listings</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoadingAllListings ? (
-                <div className="flex justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-                </div>
-              ) : allListings.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {allListings.map((listing) => (
-                    <ListingCard
-                      key={listing.listingId}
-                      listing={listing}
-                      isOwner={listing.buyerId === session.user.id}
-                      onViewDetails={handleViewDetails}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  No listings available at the moment.
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {isLoadingAllListings ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+            </div>
+          ) : allListings.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {allListings.map((listing) => (
+                <ListingCard
+                  key={listing.listingId}
+                  listing={listing}
+                  isOwner={listing.buyerId === session.user.id}
+                  onViewDetails={handleViewDetails}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              No listings available at the moment.
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="history">
-          <Card>
-            <CardHeader>
-              <CardTitle>History</CardTitle>
-              <CardDescription>
-                Your past listings and deliveries
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                No history to display.
-              </div>
-            </CardContent>
-          </Card>
+          <div className="text-center py-8 text-muted-foreground">
+            No history to display.
+          </div>
         </TabsContent>
       </Tabs>
 
