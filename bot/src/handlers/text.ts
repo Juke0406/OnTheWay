@@ -108,9 +108,12 @@ async function handleListingCreation(bot: TelegramBot, msg: TelegramBot.Message,
 
             await bot.sendMessage(
                 chatId,
-                "Where should the traveler pick up this item? Please share a location or type an address.",
+                "Where should the traveler pick up this item? Please share a location, type an address, or select 'Anywhere' for a flexible pickup location.",
                 {
                     reply_markup: {
+                        inline_keyboard: [
+                            [{ text: "🌎 Anywhere (Flexible Pickup)", callback_data: "pickup_anywhere" }]
+                        ],
                         keyboard: [[{ text: "📍 Share Location", request_location: true }]],
                         resize_keyboard: true,
                         one_time_keyboard: true
@@ -120,22 +123,52 @@ async function handleListingCreation(bot: TelegramBot, msg: TelegramBot.Message,
             break;
 
         case 'pickup_location':
-            updateUserState(userId, {
-                currentStep: 'pickup_location_text',
-                pickupAddress: text
-            });
+            // Check if user wants to set pickup location as "anywhere"
+            if (text.toLowerCase() === 'anywhere' || text.toLowerCase() === 'any' || text.toLowerCase() === 'any location') {
+                const userStateForPickup = await getUserState(userId);
+                const pickupLocationAnywhere = {
+                    latitude: 0,
+                    longitude: 0,
+                };
 
-            await bot.sendMessage(
-                chatId,
-                `Pickup address set to: ${text}\n\nWhere should the item be delivered to? Please share a location or type an address.`,
-                {
-                    reply_markup: {
-                        keyboard: [[{ text: "📍 Share Location", request_location: true }]],
-                        resize_keyboard: true,
-                        one_time_keyboard: true
+                updateUserState(userId, {
+                    listingData: {
+                        ...(userStateForPickup.listingData || { itemDescription: '', itemPrice: 0, maxFee: 0 }),
+                        pickupLocation: pickupLocationAnywhere
+                    },
+                    pickupAddress: "Anywhere",
+                    currentStep: 'destination_location'
+                });
+
+                await bot.sendMessage(
+                    chatId,
+                    `Great! Pickup location set to: Anywhere\n\nNow, where should the item be delivered to? Please share a location or type an address.`,
+                    {
+                        reply_markup: {
+                            keyboard: [[{ text: "📍 Share Location", request_location: true }]],
+                            resize_keyboard: true,
+                            one_time_keyboard: true
+                        }
                     }
-                }
-            );
+                );
+            } else {
+                updateUserState(userId, {
+                    currentStep: 'pickup_location_text',
+                    pickupAddress: text
+                });
+
+                await bot.sendMessage(
+                    chatId,
+                    `Pickup address set to: ${text}\n\nWhere should the item be delivered to? Please share a location or type an address.`,
+                    {
+                        reply_markup: {
+                            keyboard: [[{ text: "📍 Share Location", request_location: true }]],
+                            resize_keyboard: true,
+                            one_time_keyboard: true
+                        }
+                    }
+                );
+            }
             break;
 
         case 'pickup_location_text':
@@ -492,12 +525,12 @@ async function handleDeliveryConfirmation(bot: TelegramBot, msg: TelegramBot.Mes
         if (bothConfirmed) {
             listing.status = ListingStatus.COMPLETED;
             listing.deliveryConfirmed = true;
-            
+
             // Process final payment
             const buyer = await User.findOne({ telegramId: listing.buyerId });
             const traveler = await User.findOne({ telegramId: listing.travelerId });
             const acceptedBid = await Bid.findById(listing.acceptedBidId);
-            
+
             // Make sure all required entities exist
             if (!buyer || !traveler || !acceptedBid || !listing.travelerId) {
                 await bot.sendMessage(
@@ -506,17 +539,17 @@ async function handleDeliveryConfirmation(bot: TelegramBot, msg: TelegramBot.Mes
                 );
                 return;
             }
-            
+
             const totalCost = listing.itemPrice + acceptedBid.proposedFee;
             const finalPayment = totalCost * 0.5; // Remaining 50%
             const travelerPayment = totalCost * 0.95; // 95% of total goes to traveler
-            
+
             // Deduct final payment from buyer
             buyer.walletBalance -= finalPayment;
-            
+
             // Add payment to traveler
             traveler.walletBalance += travelerPayment;
-            
+
             await buyer.save();
             await traveler.save();
             await listing.save();
@@ -541,14 +574,14 @@ async function handleDeliveryConfirmation(bot: TelegramBot, msg: TelegramBot.Mes
 
             // Send transaction details to buyer
             await bot.sendMessage(
-                listing.buyerId, 
+                listing.buyerId,
                 `${completionMessage}\n\n💰 *Transaction Details*\nFinal payment: $${finalPayment} deducted\nYour new wallet balance: $${buyer.walletBalance}`,
                 { parse_mode: 'Markdown' }
             );
 
             // Send transaction details to traveler - with null check
             await bot.sendMessage(
-                listing.travelerId, 
+                listing.travelerId,
                 `${completionMessage}\n\n💰 *Transaction Details*\nPayment received: $${travelerPayment}\nYour new wallet balance: $${traveler.walletBalance}`,
                 { parse_mode: 'Markdown' }
             );
@@ -622,18 +655,38 @@ async function notifyNearbyTravelers(bot: TelegramBot, listing: any): Promise<vo
                 continue;
             }
 
-            const distance = calculateDistance(
-                traveler.availabilityData.location.latitude,
-                traveler.availabilityData.location.longitude,
-                listing.pickupLocation.latitude,
-                listing.pickupLocation.longitude
-            );
+            // Calculate distance and determine if it's an "anywhere" pickup
+            let distance = 0;
+            let isAnywhere = false;
 
-            if (distance <= traveler.availabilityData.radius) {
-                const notificationMessage = `
+            if (listing.pickupLocation.latitude === 0 && listing.pickupLocation.longitude === 0) {
+                // It's an "anywhere" pickup location
+                isAnywhere = true;
+                distance = 0; // Set distance to 0 for "anywhere" pickups
+            } else {
+                // Normal pickup location - calculate actual distance
+                distance = calculateDistance(
+                    traveler.availabilityData.location.latitude,
+                    traveler.availabilityData.location.longitude,
+                    listing.pickupLocation.latitude,
+                    listing.pickupLocation.longitude
+                );
+
+                // Skip if the pickup is too far and it's not "anywhere"
+                if (distance > traveler.availabilityData.radius) {
+                    continue;
+                }
+            }
+
+            // Prepare the notification message
+            let locationText = isAnywhere
+                ? "*ANYWHERE* (flexible pickup location)"
+                : `${distance.toFixed(1)} km from your location`;
+
+            const notificationMessage = `
 📦 *New Delivery Request Nearby!*
 
-Someone needs an item ${distance.toFixed(1)} km from your location:
+Someone needs an item delivered from ${locationText}:
 Item: ${listing.itemDescription}
 Price: $${listing.itemPrice}
 Offered Fee: $${listing.maxFee}
@@ -641,21 +694,20 @@ Offered Fee: $${listing.maxFee}
 Are you interested in picking up this item?
         `;
 
-                await bot.sendMessage(traveler.telegramId, notificationMessage, {
-                    parse_mode: 'Markdown',
-                    reply_markup: {
-                        inline_keyboard: [
-                            [
-                                { text: "✅ Accept", callback_data: `bid_accept_${listing._id}` },
-                                { text: "❌ Decline", callback_data: `bid_decline_${listing._id}` }
-                            ],
-                            [
-                                { text: "💰 Offer Bid", callback_data: `bid_counter_${listing._id}` }
-                            ]
+            await bot.sendMessage(traveler.telegramId, notificationMessage, {
+                parse_mode: 'Markdown',
+                reply_markup: {
+                    inline_keyboard: [
+                        [
+                            { text: "✅ Accept", callback_data: `bid_accept_${listing._id}` },
+                            { text: "❌ Decline", callback_data: `bid_decline_${listing._id}` }
+                        ],
+                        [
+                            { text: "💰 Offer Bid", callback_data: `bid_counter_${listing._id}` }
                         ]
-                    }
-                });
-            }
+                    ]
+                }
+            });
         }
     } catch (error) {
         console.error("Error notifying travelers:", error);
@@ -674,7 +726,7 @@ export async function handleTopup(bot: TelegramBot, msg: TelegramBot.Message): P
     // Process topup regardless of state if currentStep is topup_amount
     if (userState.state === ConversationState.TOPUP || userState.currentStep === 'topup_amount') {
         const topupAmount = parseFloat(text);
-        
+
         if (isNaN(topupAmount) || topupAmount <= 0) {
             await bot.sendMessage(
                 chatId,
@@ -683,14 +735,14 @@ export async function handleTopup(bot: TelegramBot, msg: TelegramBot.Message): P
             );
             return;
         }
-        
+
         try {
             const user = await User.findOneAndUpdate(
                 { telegramId: userId },
                 { $inc: { walletBalance: topupAmount } },
                 { new: true }
             );
-            
+
             if (!user) {
                 // Create user if not exists
                 const newUser = new User({
@@ -701,12 +753,12 @@ export async function handleTopup(bot: TelegramBot, msg: TelegramBot.Message): P
                     walletBalance: topupAmount
                 });
                 await newUser.save();
-                
+
                 updateUserState(userId, {
                     state: ConversationState.IDLE,
                     currentStep: undefined
                 });
-                
+
                 await bot.sendMessage(
                     chatId,
                     `✅ Successfully added $${topupAmount} to your wallet. Your new balance is $${topupAmount}.`
@@ -716,7 +768,7 @@ export async function handleTopup(bot: TelegramBot, msg: TelegramBot.Message): P
                     state: ConversationState.IDLE,
                     currentStep: undefined
                 });
-                
+
                 await bot.sendMessage(
                     chatId,
                     `✅ Successfully added $${topupAmount} to your wallet. Your new balance is $${user.walletBalance}.`
