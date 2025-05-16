@@ -1,4 +1,6 @@
 import { Document, Types } from "mongoose";
+import { BidStatus, BidSource } from "./Bid";
+import { ListingStatus } from "./Listing";
 import { ConversationState } from "./User";
 
 // Define listing status enum to match the bot
@@ -121,6 +123,7 @@ export interface IBid extends Document {
   listingId: string | Types.ObjectId; // Support both string (web) and ObjectId (bot)
   proposedFee: number;
   status: BidStatus;
+  source?: BidSource; // Track where the bid was accepted from
 
   // Web app specific fields
   timestamp?: Date;

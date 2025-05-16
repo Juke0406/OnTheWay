@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { generateOTP } from "@/lib/utils";
-import { Bid, BidStatus, Listing, ListingStatus } from "@/models";
+import { Bid, BidStatus, BidSource, Listing, ListingStatus } from "@/models";
 import { NextRequest, NextResponse } from "next/server";
 
 // POST /api/bids/[bidId]/accept - Accept a bid
@@ -53,8 +53,11 @@ export async function POST(
     const otpBuyer = generateOTP();
     const otpTraveler = generateOTP();
 
-    // Update the bid status
-    await Bid.updateOne({ bidId }, { status: BidStatus.ACCEPTED });
+    // Update the bid status and set source as webapp
+    await Bid.updateOne({ bidId }, {
+      status: BidStatus.ACCEPTED,
+      source: BidSource.WEBAPP
+    });
 
     // Update the listing
     await Listing.updateOne(
