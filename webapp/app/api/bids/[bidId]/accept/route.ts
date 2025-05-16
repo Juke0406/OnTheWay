@@ -17,7 +17,7 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { bidId } = params;
+    const { bidId } = await params;
 
     // Find the bid
     const bid = await Bid.findOne({ bidId });

@@ -79,15 +79,27 @@ export function MatchmakingDrawer({
   };
 
   const getTravelerAvatar = (
-    telegramId: number | string | undefined,
-    name?: string
+    primarySeed: string | number | undefined, // e.g., telegramId
+    secondarySeed: string | undefined, // e.g., name
+    fallbackSeed: string, // e.g., bidId or userId
+    avatarSize: number = 40 // Default size
   ) => {
-    const seed = telegramId
-      ? telegramId.toString()
-      : name || Math.random().toString();
+    let seed = primarySeed
+      ? primarySeed.toString()
+      : secondarySeed || fallbackSeed;
+
+    if (!seed) {
+      // This case should be rare if fallbackSeed is always a valid string.
+      // If somehow fallbackSeed is also empty, use a static placeholder or log an error.
+      console.warn(
+        "Avatar seed is unexpectedly empty for matchmaking drawer, using a default fallback."
+      );
+      seed = "default_avatar_seed"; // Static fallback to prevent Math.random()
+    }
+
     const avatar = createAvatar(micah, {
       seed: seed,
-      size: 40, // Smaller avatar for list items
+      size: avatarSize,
     });
     return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
       avatar.toString()
@@ -128,7 +140,9 @@ export function MatchmakingDrawer({
                   <AvatarImage
                     src={getTravelerAvatar(
                       acceptedBid.travelerDetails?.telegramId,
-                      acceptedBid.travelerDetails?.name
+                      acceptedBid.travelerDetails?.name,
+                      acceptedBid.bidId || acceptedBid._id.toString(),
+                      40
                     )}
                     alt="Traveller"
                   />
@@ -263,7 +277,9 @@ export function MatchmakingDrawer({
                           <AvatarImage
                             src={getTravelerAvatar(
                               bid.travelerDetails?.telegramId,
-                              bid.travelerDetails?.name
+                              bid.travelerDetails?.name,
+                              bid.bidId || bid._id.toString(),
+                              40
                             )}
                             alt="Traveller"
                           />
@@ -332,7 +348,12 @@ export function MatchmakingDrawer({
                         className="h-7 w-7 border-2 border-primary/20"
                       >
                         <AvatarImage
-                          src={getTravelerAvatar(user.telegramId, user.name)}
+                          src={getTravelerAvatar(
+                            user.telegramId,
+                            user.name,
+                            user.userId,
+                            28
+                          )}
                           alt="Traveller"
                         />
                         <AvatarFallback>
