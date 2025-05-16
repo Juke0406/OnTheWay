@@ -39,39 +39,81 @@ const ListingSchema: Schema = new Schema(
       min: 0,
     },
 
-    // Location fields - using bot format only
+    // Location fields - support both formats
     pickupLocation: {
       type: Schema.Types.Mixed,
+      // Support both bot format and web format
       validate: {
         validator: function (v: any) {
-          return (
+          // Bot format
+          if (
             v &&
             typeof v === "object" &&
             "latitude" in v &&
-            "longitude" in v &&
-            typeof v.latitude === "number" &&
-            typeof v.longitude === "number"
-          );
+            "longitude" in v
+          ) {
+            return true;
+          }
+          // Web format
+          if (
+            v &&
+            typeof v === "object" &&
+            "address" in v &&
+            "coordinates" in v
+          ) {
+            return true;
+          }
+          // Flat format: address, latitude, longitude at top level
+          if (
+            v &&
+            typeof v === "object" &&
+            "address" in v &&
+            "latitude" in v &&
+            "longitude" in v
+          ) {
+            return true;
+          }
+          return false;
         },
-        message:
-          "Invalid pickup location format. Must include latitude and longitude as numbers.",
+        message: "Invalid pickup location format",
       },
     },
     destinationLocation: {
       type: Schema.Types.Mixed,
+      // Support both bot format and web format
       validate: {
         validator: function (v: any) {
-          return (
+          // Bot format
+          if (
             v &&
             typeof v === "object" &&
             "latitude" in v &&
-            "longitude" in v &&
-            typeof v.latitude === "number" &&
-            typeof v.longitude === "number"
-          );
+            "longitude" in v
+          ) {
+            return true;
+          }
+          // Web format
+          if (
+            v &&
+            typeof v === "object" &&
+            "address" in v &&
+            "coordinates" in v
+          ) {
+            return true;
+          }
+          // Flat format: address, latitude, longitude at top level
+          if (
+            v &&
+            typeof v === "object" &&
+            "address" in v &&
+            "latitude" in v &&
+            "longitude" in v
+          ) {
+            return true;
+          }
+          return false;
         },
-        message:
-          "Invalid destination location format. Must include latitude and longitude as numbers.",
+        message: "Invalid destination location format",
       },
     },
 

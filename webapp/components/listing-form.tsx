@@ -12,7 +12,17 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useMatchmaking } from "@/contexts/matchmaking-context";
+import { useMatchmaking } from "../contexts/matchmaking-context";
+
+type MatchmakingListing = {
+  itemDescription: string;
+  itemPrice: number;
+  maxFee: number;
+  pickupAddress: string;
+  deliveryAddress: string;
+  pickupCoordinates: { lat: number; lng: number };
+  deliveryCoordinates: { lat: number; lng: number };
+};
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -145,26 +155,26 @@ export function ListingForm({
     setIsSubmitting(true);
 
     try {
-      // Convert string values to numbers for price and fee
       const formattedData = {
         ...data,
         itemPrice: parseFloat(data.itemPrice),
         maxFee: parseFloat(data.maxFee),
       };
 
-      // Set the current listing in the matchmaking context
-      setCurrentListing(formattedData);
-
-      // Format locations to match the bot format
-      const pickupLocation = {
-        latitude: pickupAddress.lat,
-        longitude: pickupAddress.lng,
+      // Prepare data for MatchmakingContext, including coordinates
+      const matchmakingListingData: MatchmakingListing = {
+        itemDescription: formattedData.itemDescription,
+        itemPrice: formattedData.itemPrice,
+        maxFee: formattedData.maxFee,
+        pickupAddress: pickupAddress.formattedAddress,
+        deliveryAddress: deliveryAddress.formattedAddress,
+        pickupCoordinates: { lat: pickupAddress.lat, lng: pickupAddress.lng },
+        deliveryCoordinates: {
+          lat: deliveryAddress.lat,
+          lng: deliveryAddress.lng,
+        },
       };
-
-      const destinationLocation = {
-        latitude: deliveryAddress.lat,
-        longitude: deliveryAddress.lng,
-      };
+      setCurrentListing(matchmakingListingData);
 
       // Make the API call to create the listing
       try {
@@ -178,12 +188,14 @@ export function ListingForm({
             itemPrice: formattedData.itemPrice,
             maxFee: formattedData.maxFee,
             pickupLocation: {
-              ...pickupLocation,
-              address: formattedData.pickupAddress, // Keep address for display purposes
+              address: formattedData.pickupAddress,
+              latitude: pickupAddress.lat,
+              longitude: pickupAddress.lng,
             },
             destinationLocation: {
-              ...destinationLocation,
-              address: formattedData.deliveryAddress, // Keep address for display purposes
+              address: formattedData.deliveryAddress,
+              latitude: deliveryAddress.lat,
+              longitude: deliveryAddress.lng,
             },
           }),
         });

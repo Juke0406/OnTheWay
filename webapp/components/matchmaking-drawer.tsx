@@ -194,9 +194,15 @@ export function MatchmakingDrawer({
                 );
               })}
 
-              {foundUsers.length === 0 && isSearching && (
+              {foundUsers.length === 0 && isSearching && elapsedTime > 10 && (
                 <div className="text-center py-8 text-muted-foreground">
-                  Searching for travellers...
+                  Searching for travellers... If none are found soon, you may
+                  need to adjust your request.
+                </div>
+              )}
+              {foundUsers.length === 0 && !isSearching && currentListing && (
+                <div className="text-center py-8 text-muted-foreground">
+                  No matching travellers found for your request.
                 </div>
               )}
             </div>
