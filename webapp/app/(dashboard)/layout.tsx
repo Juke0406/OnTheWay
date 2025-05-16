@@ -14,7 +14,13 @@ import {
   CredenzaTitle,
   CredenzaTrigger,
 } from "@/components/ui/credenza";
-import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerTrigger,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -176,9 +182,12 @@ export default function DashboardLayout({
                 </Button>
               </DrawerTrigger>
               <DrawerContent>
-                <div className="px-4 py-4">
-                  <h2 className="text-xl font-semibold mb-4">Dashboard</h2>
-                  {/* Dashboard content directly included */}
+                <DrawerHeader className="px-4 pt-4 pb-2">
+                  <DrawerTitle className="text-xl font-semibold">
+                    Dashboard
+                  </DrawerTitle>
+                </DrawerHeader>
+                <div className="px-4 pb-4">
                   <DashboardContent />
                 </div>
               </DrawerContent>

@@ -134,9 +134,9 @@ A platform that matches buyers and travelers in real-time using a web dashboard 
 
 - [x] Set up MongoDB models (Users, Listings, Bids, Reviews)
 - [x] User authentication (Telegram + JWT)
-- [ ] CRUD API for Listings and Bids
+- [~] CRUD API for Listings and Bids _(Create/Read mostly done; Update/Delete partially implemented or missing)_
 - [x] Mock escrow logic: deposit, lock, release
-- [ ] OTP generation & verification logic
+- [x] OTP generation & verification logic
 - [ ] Matching engine (location + timing)
 - [ ] Review system implementation
 
